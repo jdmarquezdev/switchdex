@@ -1,0 +1,25 @@
+---
+interface Props { code?: string; label: string; }
+const { code, label } = Astro.props;
+const isGeneric = !code || code === 'multi';
+---
+
+<svg viewBox="0 0 21 14" class={`flag${isGeneric ? ' flag-generic' : ''}`} role="img" aria-label={label}>
+  {code === 'es' && <><rect width="21" height="14" fill="#aa151b"/><rect y="3.5" width="21" height="7" fill="#f1bf00"/><circle cx="7" cy="7" r="1.15" fill="#aa151b"/></>}
+  {code === 'gb' && <><rect width="21" height="14" fill="#012169"/><path d="M0 0 21 14M21 0 0 14" stroke="#fff" stroke-width="4"/><path d="M0 0 21 14M21 0 0 14" stroke="#c8102e" stroke-width="1.5"/><path d="M10.5 0v14M0 7h21" stroke="#fff" stroke-width="5"/><path d="M10.5 0v14M0 7h21" stroke="#c8102e" stroke-width="2.7"/></>}
+  {code === 'fr' && <><rect width="7" height="14" fill="#0055a4"/><rect x="7" width="7" height="14" fill="#fff"/><rect x="14" width="7" height="14" fill="#ef4135"/></>}
+  {code === 'de' && <><rect width="21" height="4.67" fill="#000"/><rect y="4.67" width="21" height="4.67" fill="#dd0000"/><rect y="9.34" width="21" height="4.66" fill="#ffce00"/></>}
+  {code === 'it' && <><rect width="7" height="14" fill="#009246"/><rect x="7" width="7" height="14" fill="#fff"/><rect x="14" width="7" height="14" fill="#ce2b37"/></>}
+  {code === 'jp' && <><rect width="21" height="14" fill="#fff"/><circle cx="10.5" cy="7" r="3.1" fill="#bc002d"/></>}
+  {code === 'pt' && <><rect width="8.4" height="14" fill="#046a38"/><rect x="8.4" width="12.6" height="14" fill="#da291c"/><circle cx="8.4" cy="7" r="2.2" fill="#ffcd00"/><circle cx="8.4" cy="7" r="1.25" fill="#fff"/></>}
+  {code === 'ru' && <><rect width="21" height="4.67" fill="#fff"/><rect y="4.67" width="21" height="4.67" fill="#0039a6"/><rect y="9.34" width="21" height="4.66" fill="#d52b1e"/></>}
+  {code === 'cn' && <><rect width="21" height="14" fill="#de2910"/><path d="m4 2 .65 1.45 1.58.15-1.18 1.06.34 1.56L4 5.42 2.61 6.22l.34-1.56L1.77 3.6l1.58-.15Z" fill="#ffde00"/><circle cx="7.5" cy="2.4" r=".55" fill="#ffde00"/><circle cx="8.4" cy="4" r=".55" fill="#ffde00"/><circle cx="8.1" cy="6" r=".55" fill="#ffde00"/></>}
+  {code === 'kr' && <><rect width="21" height="14" fill="#fff"/><path d="M10.5 3.7a3.3 3.3 0 0 1 0 6.6 1.65 1.65 0 0 0 0-3.3 1.65 1.65 0 0 1 0-3.3Z" fill="#cd2e3a"/><path d="M10.5 10.3a3.3 3.3 0 0 1 0-6.6 1.65 1.65 0 0 0 0 3.3 1.65 1.65 0 0 1 0 3.3Z" fill="#0047a0"/><path d="m3 3 3 1M15 10l3 1M3 11l3-1M15 4l3-1" stroke="#000" stroke-width=".75"/></>}
+  {code === 'nl' && <><rect width="21" height="4.67" fill="#ae1c28"/><rect y="4.67" width="21" height="4.67" fill="#fff"/><rect y="9.34" width="21" height="4.66" fill="#21468b"/></>}
+  {code === 'pl' && <><rect width="21" height="7" fill="#fff"/><rect y="7" width="21" height="7" fill="#dc143c"/></>}
+  {code === 'ua' && <><rect width="21" height="7" fill="#0057b7"/><rect y="7" width="21" height="7" fill="#ffd700"/></>}
+  {code === 'cz' && <><rect width="21" height="7" fill="#fff"/><rect y="7" width="21" height="7" fill="#d7141a"/><path d="M0 0 9 7 0 14Z" fill="#11457e"/></>}
+  {code === 'tr' && <><rect width="21" height="14" fill="#e30a17"/><circle cx="8.2" cy="7" r="3.3" fill="#fff"/><circle cx="9.3" cy="7" r="2.65" fill="#e30a17"/><path d="m13 5.3.45 1.05 1.13.1-.85.76.25 1.12-.98-.57-.98.57.25-1.12-.85-.76 1.13-.1Z" fill="#fff"/></>}
+  {code === 'ae' && <><rect width="5.25" height="14" fill="#f00"/><rect x="5.25" width="15.75" height="4.67" fill="#00732f"/><rect x="5.25" y="4.67" width="15.75" height="4.67" fill="#fff"/><rect x="5.25" y="9.34" width="15.75" height="4.66" fill="#000"/></>}
+  {isGeneric && <><rect x=".5" y=".5" width="20" height="13" rx="2" fill="none" stroke="currentColor"/><circle cx="10.5" cy="7" r="4" fill="none" stroke="currentColor"/><path d="M6.5 7h8M10.5 3c1.4 1.2 2.1 2.5 2.1 4s-.7 2.8-2.1 4c-1.4-1.2-2.1-2.5-2.1-4s.7-2.8 2.1-4Z" fill="none" stroke="currentColor"/></>}
+</svg>

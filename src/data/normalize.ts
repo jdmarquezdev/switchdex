@@ -6,11 +6,18 @@ const LANGUAGE_LABELS: Record<string, string> = {
   fr: 'Francés', fra: 'Francés', fre: 'Francés', french: 'Francés', frances: 'Francés', francés: 'Francés', французский: 'Francés',
   de: 'Alemán', deu: 'Alemán', ger: 'Alemán', german: 'Alemán', aleman: 'Alemán', alemán: 'Alemán', немецкий: 'Alemán',
   it: 'Italiano', ita: 'Italiano', italian: 'Italiano', italiano: 'Italiano', итальянский: 'Italiano',
-  ja: 'Japonés', jpn: 'Japonés', japanese: 'Japonés', japones: 'Japonés', japonés: 'Japonés', японский: 'Japonés',
+  ja: 'Japonés', jpn: 'Japonés', japanese: 'Japonés', japones: 'Japonés', japonés: 'Japonés', японский: 'Japonés', 日本語: 'Japonés',
   pt: 'Portugués', por: 'Portugués', portuguese: 'Portugués', portugues: 'Portugués', português: 'Portugués',
   ru: 'Ruso', rus: 'Ruso', russian: 'Ruso', ruso: 'Ruso', русский: 'Ruso',
-  zh: 'Chino', zho: 'Chino', chi: 'Chino', chinese: 'Chino', chino: 'Chino',
-  ko: 'Coreano', kor: 'Coreano', korean: 'Coreano', coreano: 'Coreano'
+  zh: 'Chino', zho: 'Chino', chi: 'Chino', chinese: 'Chino', chino: 'Chino', 中文: 'Chino', 简体中文: 'Chino', 繁體中文: 'Chino',
+  ko: 'Coreano', kor: 'Coreano', korean: 'Coreano', coreano: 'Coreano', 한국어: 'Coreano',
+  nl: 'Neerlandés', dutch: 'Neerlandés', nederlands: 'Neerlandés', neerlandes: 'Neerlandés', neerlandés: 'Neerlandés',
+  pl: 'Polaco', polish: 'Polaco', polski: 'Polaco', polaco: 'Polaco',
+  uk: 'Ucraniano', ukrainian: 'Ucraniano', ucraniano: 'Ucraniano', українська: 'Ucraniano', український: 'Ucraniano',
+  cs: 'Checo', czech: 'Checo', checo: 'Checo', čeština: 'Checo',
+  tr: 'Turco', turkish: 'Turco', turco: 'Turco', türkçe: 'Turco',
+  ar: 'Árabe', arabic: 'Árabe', arabe: 'Árabe', árabe: 'Árabe', العربية: 'Árabe',
+  multi: 'Multi'
 };
 
 const EMPTY_LANGUAGE_VALUES = new Set(['нет', 'none', 'n/a', 'no', 'не озвучивается', 'sin voces', 'not voiced']);
@@ -32,7 +39,12 @@ export function normalizeLanguages(values: unknown[]): string[] {
   const normalized = flattenValues(values)
     .map(cleanString)
     .filter((value): value is string => typeof value === 'string' && !EMPTY_LANGUAGE_VALUES.has(value.toLocaleLowerCase('es')))
-    .map((value) => LANGUAGE_LABELS[value.toLocaleLowerCase('es')] ?? value);
+    .map((value) => {
+      const key = value.toLocaleLowerCase('es');
+      const multi = key.match(/^multi\s*-?\s*(\d+)?$/i);
+      if (multi) return multi[1] ? `Multi ${multi[1]}` : 'Multi';
+      return LANGUAGE_LABELS[key] ?? value;
+    });
   return [...new Set(normalized)];
 }
 
@@ -250,7 +262,7 @@ export function normalizeEntry(entry: CompatibleCatalogEntry): Game | undefined 
   const languages = normalizeLanguages(entry.languages);
   const interfaceLanguages = normalizeLanguages(entry.interfaceLanguages);
   const voiceLanguages = normalizeLanguages(entry.voiceLanguages);
-  const allLanguages = [...new Set([...languages, ...interfaceLanguages])];
+  const allLanguages = [...new Set([...languages, ...interfaceLanguages, ...voiceLanguages])];
   const sizeBytes = parseSize(entry.size);
   const contentType = inferContentType(entry);
   const developer = cleanString(entry.developer);
@@ -273,6 +285,7 @@ export function normalizeEntry(entry: CompatibleCatalogEntry): Game | undefined 
     developer,
     publisher,
     languages: allLanguages,
+    generalLanguages: languages,
     interfaceLanguages,
     voiceLanguages,
     sizeBytes,

@@ -41,6 +41,10 @@ describe('normalizeLanguages', () => {
   it('mapea etiquetas conocidas y elimina duplicados', () => {
     expect(normalizeLanguages(['English / Испанский', 'EN'])).toEqual(['Inglés', 'Español']);
   });
+
+  it('conserva indicadores Multi y su número de idiomas', () => {
+    expect(normalizeLanguages(['Multi10', 'Multi 10', 'MULTI'])).toEqual(['Multi 10', 'Multi']);
+  });
 });
 
 describe('createGameId', () => {
@@ -63,6 +67,18 @@ describe('normalizeImageUrl', () => {
 });
 
 describe('normalizeCatalog', () => {
+  it('reúne idiomas generales, de interfaz y de voz sin perder ninguno', () => {
+    const result = normalizeCatalog([{
+      id: 'all-languages', title: 'All Languages', genres: [], screenshots: [], descriptions: {},
+      languages: ['Español'], interfaceLanguages: ['English', 'Multi 10'], voiceLanguages: ['日本語']
+    }]);
+
+    expect(result.games[0].languages).toEqual(['Español', 'Inglés', 'Multi 10', 'Japonés']);
+    expect(result.games[0].generalLanguages).toEqual(['Español']);
+    expect(result.games[0].interfaceLanguages).toEqual(['Inglés', 'Multi 10']);
+    expect(result.games[0].voiceLanguages).toEqual(['Japonés']);
+  });
+
   it('acepta magnets con hash BitTorrent válido y descarta el resto', () => {
     const result = normalizeCatalog([
       {

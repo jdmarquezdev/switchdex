@@ -1,7 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="15" fill="#171513"/>
-  <path d="M11 19h16M11 32h21M11 45h16" fill="none" stroke="#f06445" stroke-linecap="round" stroke-width="5"/>
-  <path d="m41 44 12-25" fill="none" stroke="#f3eee8" stroke-linecap="round" stroke-width="4"/>
-  <circle cx="41" cy="44" r="5" fill="#171513" stroke="#f06445" stroke-width="4"/>
-  <circle cx="53" cy="19" r="5" fill="#171513" stroke="#f06445" stroke-width="4"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">SwitchDex</title>
+  <defs>
+    <path id="joycon" d="M7 21h8v22H7a5 5 0 0 1-5-5V26a5 5 0 0 1 5-5Z"/>
+  </defs>
+  <use href="#joycon" fill="#f06445"/>
+  <rect x="15" y="21" width="34" height="22" fill="#f3eee8"/>
+  <rect x="18" y="24" width="28" height="16" rx="1" fill="#171513"/>
+  <rect x="23" y="28" width="5" height="8" rx="1" fill="#5e5851"/>
+  <rect x="30" y="26" width="6" height="12" rx="1" fill="#f06445"/>
+  <rect x="38" y="28" width="5" height="8" rx="1" fill="#5e5851"/>
+  <use href="#joycon" fill="#b9cf73" transform="translate(64 0) scale(-1 1)"/>
+  <circle cx="8" cy="28" r="3" fill="#171513"/>
+  <path d="M6 36.5h4" stroke="#171513" stroke-linecap="round" stroke-width="1.5"/>
+  <circle cx="56" cy="36.5" r="3" fill="#171513"/>
+  <circle cx="56" cy="27" r="1.3" fill="#171513"/>
+  <circle cx="59" cy="30" r="1.3" fill="#171513"/>
+  <circle cx="53" cy="30" r="1.3" fill="#171513"/>
 </svg>

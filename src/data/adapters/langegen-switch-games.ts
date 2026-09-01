@@ -43,7 +43,10 @@ const LANGUAGE_PATTERNS: Array<[RegExp, string]> = [
 
 function extractKnownLanguages(values: unknown[]): string[] {
   const source = values.filter((value): value is string => typeof value === 'string').join(' ');
-  return LANGUAGE_PATTERNS.filter(([pattern]) => pattern.test(source)).map(([, language]) => language);
+  const languages = LANGUAGE_PATTERNS.filter(([pattern]) => pattern.test(source)).map(([, language]) => language);
+  const multi = source.match(/\bmulti\s*[-:]?\s*(\d+)?\b/i);
+  if (multi) languages.push(multi[1] ? `Multi ${multi[1]}` : 'Multi');
+  return [...new Set(languages)];
 }
 
 /**

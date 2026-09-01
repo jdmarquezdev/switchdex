@@ -4,7 +4,7 @@ import type { Game } from '../src/data/schema';
 
 function game(description: string): Game {
   return {
-    id: 'game', title: 'Game', normalizedTitle: 'game', genres: [], languages: [], interfaceLanguages: [],
+    id: 'game', title: 'Game', normalizedTitle: 'game', genres: [], languages: [], generalLanguages: [], interfaceLanguages: [],
     voiceLanguages: [], screenshots: [], description, descriptions: {}, contentType: 'base', searchText: 'game'
   };
 }

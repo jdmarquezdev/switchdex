@@ -1,66 +1,70 @@
 ---
 import type { Game } from '../data/schema';
+import LanguageFlag from './LanguageFlag.astro';
 
 interface Props { game: Game; }
 const { game } = Astro.props;
 
-/** Banderas SVG inline: dos franjas horizontales o verticales por idioma. */
-const FLAGS: Record<string, { label: string; flag: string }> = {
-  'Español': { label: 'Español', flag: 'es' },
-  'Inglés': { label: 'Inglés', flag: 'en' },
-  'Francés': { label: 'Francés', flag: 'fr' },
-  'Alemán': { label: 'Alemán', flag: 'de' },
-  'Italiano': { label: 'Italiano', flag: 'it' },
-  'Japonés': { label: 'Japonés', flag: 'ja' },
-  'Portugués': { label: 'Portugués', flag: 'pt' },
-  'Ruso': { label: 'Ruso', flag: 'ru' },
-  'Chino': { label: 'Chino', flag: 'zh' },
-  'Coreano': { label: 'Coreano', flag: 'ko' },
-  'Neerlandés': { label: 'Neerlandés', flag: 'nl' },
-  'Polaco': { label: 'Polaco', flag: 'pl' },
-  'Ucraniano': { label: 'Ucraniano', flag: 'uk' },
-  'Checo': { label: 'Checo', flag: 'cs' },
-  'Turco': { label: 'Turco', flag: 'tr' },
-  'Árabe': { label: 'Árabe', flag: 'ar' }
+const FLAG_CODES: Record<string, string> = {
+  'Español': 'es',
+  'Inglés': 'gb',
+  'Francés': 'fr',
+  'Alemán': 'de',
+  'Italiano': 'it',
+  'Japonés': 'jp',
+  'Portugués': 'pt',
+  'Ruso': 'ru',
+  'Chino': 'cn',
+  'Coreano': 'kr',
+  'Neerlandés': 'nl',
+  'Polaco': 'pl',
+  'Ucraniano': 'ua',
+  'Checo': 'cz',
+  'Turco': 'tr',
+  'Árabe': 'ae'
 };
 
-/** Franjas [color] de cada bandera, de arriba a abajo. */
-const FLAG_STRIPES: Record<string, string[]> = {
-  es: ['#AA151B', '#F1BF00', '#AA151B'],
-  en: ['#012169', '#C8102E', '#012169'],
-  fr: ['#0055A4', '#FFFFFF', '#EF4135'],
-  de: ['#000000', '#DD0000', '#FFCE00'],
-  it: ['#009246', '#FFFFFF', '#CE2B37'],
-  ja: ['#FFFFFF'],
-  pt: ['#006600', '#FF0000'],
-  ru: ['#FFFFFF', '#0039A6', '#D52B1E'],
-  zh: ['#DE2910'],
-  ko: ['#FFFFFF'],
-  nl: ['#AE1C28', '#FFFFFF', '#21468B'],
-  pl: ['#FFFFFF', '#DC143C'],
-  uk: ['#0057B7', '#FFDD00'],
-  cs: ['#FFFFFF', '#D7141A'],
-  tr: ['#E30A17'],
-  ar: ['#CE1126', '#FFFFFF', '#000000']
-};
+interface LanguageGroup {
+  key: 'general' | 'interface' | 'voice';
+  label: string;
+  i18nKey: string;
+  languages: string[];
+}
 
-const languageFlags = game.languages
-  .map((language) => ({ language, flag: FLAGS[language]?.flag }))
-  .map((item) => item.flag ? { ...item, stripes: FLAG_STRIPES[item.flag] ?? ['#888'] } : undefined)
-  .filter((item): item is { language: string; flag: string; stripes: string[] } => Boolean(item));
+const toFlagItems = (languages: string[]) => languages.map((language) => ({
+  language,
+  code: /^multi(?:\s|$)/i.test(language) ? 'multi' : FLAG_CODES[language]
+}));
+
+const generalLanguages = game.generalLanguages ?? (
+  game.interfaceLanguages.length === 0 && game.voiceLanguages.length === 0 ? game.languages : []
+);
+
+const groups: LanguageGroup[] = [];
+if (game.interfaceLanguages.length > 0) {
+  groups.push({ key: 'interface', label: 'Texto', i18nKey: 'detail.textLanguages', languages: game.interfaceLanguages });
+} else if (generalLanguages.length > 0) {
+  groups.push({ key: 'general', label: 'Idiomas', i18nKey: 'detail.unspecifiedLanguages', languages: generalLanguages });
+}
+if (game.voiceLanguages.length > 0) {
+  groups.push({ key: 'voice', label: 'Voces', i18nKey: 'detail.voiceLanguages', languages: game.voiceLanguages });
+}
 ---
 
-{languageFlags.length > 0 && (
-  <ul class="language-flags" aria-label="Idiomas del juego" data-i18n-aria="detail.languagesLabel">
-    {languageFlags.map((item) => (
-      <li>
-        <svg viewBox="0 0 21 14" class="flag" role="img" aria-label={item.language}>
-          {item.stripes.map((color, index) => (
-            <rect x="0" y={(14 / item.stripes.length) * index} width="21" height={14 / item.stripes.length} fill={color} />
+{groups.length > 0 && (
+  <div class="language-groups" aria-label="Idiomas del juego" data-i18n-aria="detail.languagesLabel">
+    {groups.map((group) => (
+      <div class="language-group">
+        <p class="language-group-label" data-i18n={group.i18nKey}>{group.label}</p>
+        <ul class="language-flags">
+          {toFlagItems(group.languages).map((item) => (
+            <li>
+              <LanguageFlag code={item.code} label={item.language} />
+              <span>{item.language}</span>
+            </li>
           ))}
-        </svg>
-        <span>{item.language}</span>
-      </li>
+        </ul>
+      </div>
     ))}
-  </ul>
+  </div>
 )}

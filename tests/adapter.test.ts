@@ -29,7 +29,7 @@ describe('Langegen switch-games adapter', () => {
     }]);
 
     expect(entries[0].title).toBe('Drakkar Crew');
-    expect(entries[0].interfaceLanguages).toEqual(['Ruso', 'Inglés']);
+    expect(entries[0].interfaceLanguages).toEqual(['Ruso', 'Inglés', 'Multi 10']);
     expect(entries[0].contentType).toBe('base');
     expect(entries[0].magnet).toBe('magnet:?xt=urn:btih:0123456789abcdef0123456789abcdef01234567&dn=Drakkar+Crew');
   });

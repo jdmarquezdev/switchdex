@@ -39,6 +39,8 @@ export interface Game {
   developer?: string;
   publisher?: string;
   languages: string[];
+  /** Idiomas sin categoría explícita en la fuente. */
+  generalLanguages: string[];
   interfaceLanguages: string[];
   voiceLanguages: string[];
   sizeBytes?: number;
