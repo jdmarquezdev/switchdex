@@ -2,16 +2,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ScreenshotGallery from '../../components/ScreenshotGallery.astro';
 import GameLanguages from '../../components/GameLanguages.astro';
-import { loadCatalog } from '../../data/catalog';
-import type { Game } from '../../data/schema';
+import { loadGame } from '../../data/catalog';
 
-export async function getStaticPaths() {
-  const catalog = await loadCatalog();
-  return catalog.games.map((game) => ({ params: { id: game.id }, props: { game } }));
-}
-
-interface Props { game: Game; }
-const { game } = Astro.props;
+const id = Astro.params.id;
+const game = id ? await loadGame(id) : undefined;
+if (!game) return Astro.rewrite('/404');
 const descriptionEs = game.descriptions?.es ?? game.description ?? game.descriptions?.en;
 const descriptionEn = game.descriptions?.en ?? game.description ?? game.descriptions?.es;
 const needsTranslation = Boolean(game.description || game.descriptions?.es || game.descriptions?.en)

@@ -1,7 +1,9 @@
 import { defineConfig } from 'astro/config';
+import node from '@astrojs/node';
 
 export default defineConfig({
-  output: 'static',
+  output: 'server',
+  adapter: node({ mode: 'standalone' }),
   site: process.env.SITE_URL || 'https://catalog.example.com',
   trailingSlash: 'always',
   vite: {
@@ -11,7 +13,5 @@ export default defineConfig({
       }
     }
   },
-  build: {
-    format: 'directory'
-  }
+  build: { format: 'directory' }
 });

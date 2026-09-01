@@ -1,6 +1,8 @@
-import { loadCatalog } from '../src/data/catalog';
+import { readCatalogDocument } from '../server/catalog-api';
+import { loadLocalEnv } from './env';
 
-const catalog = await loadCatalog();
+await loadLocalEnv();
+const catalog = await readCatalogDocument();
 const ids = new Set(catalog.games.map((game) => game.id));
 
 if (catalog.games.length === 0) throw new Error('El catálogo está vacío.');

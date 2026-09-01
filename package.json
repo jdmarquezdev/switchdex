@@ -4,24 +4,27 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run catalog:update && node scripts/run-astro.mjs dev",
-    "build": "npm run catalog:update && node scripts/run-astro.mjs build",
-    "preview": "node scripts/run-preview.mjs",
-    "preview:static": "node scripts/run-astro.mjs preview",
-    "catalog:update": "tsx scripts/fetch-catalog.ts",
+    "dev": "node scripts/run-astro.mjs dev",
+    "build": "node scripts/run-astro.mjs build",
+    "start": "node dist/server/entry.mjs",
+    "preview": "node dist/server/entry.mjs",
+    "api:start": "tsx server/translation-api.ts",
+    "catalog:sync": "tsx scripts/fetch-catalog.ts",
+    "catalog:update": "npm run catalog:sync",
     "catalog:translate": "tsx scripts/translate-catalog.ts",
-    "translation:server": "tsx server/translation-api.ts",
+    "translation:server": "npm run api:start",
     "catalog:validate": "tsx scripts/validate-catalog.ts",
     "check": "node scripts/run-astro.mjs check",
     "test": "vitest run"
   },
   "dependencies": {
-    "astro": "^7.2.9"
+    "@astrojs/node": "^11.1.5",
+    "astro": "^7.2.9",
+    "tsx": "^4.23.13"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@types/node": "^24.3.0",
-    "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   },

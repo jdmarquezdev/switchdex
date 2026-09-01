@@ -71,3 +71,8 @@ export interface CatalogIndexItem {
   releaseDate?: string;
   cover?: string;
 }
+
+export interface CatalogIndexDocument {
+  updatedAt: string;
+  games: CatalogIndexItem[];
+}

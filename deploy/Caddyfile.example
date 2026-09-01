@@ -1,5 +1,4 @@
 catalog.example.com {
-    root * /var/www/game-catalog
     encode zstd gzip
 
     header {
@@ -9,12 +8,5 @@ catalog.example.com {
         Content-Security-Policy "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'"
     }
 
-    @assets path /_astro/* /images/* /favicon.svg
-    header @assets Cache-Control "public, max-age=31536000, immutable"
-
-    @translation path /api/translate
-    reverse_proxy @translation 127.0.0.1:8787
-
-    try_files {path} {path}/ /404.html
-    file_server
+    reverse_proxy 127.0.0.1:4321
 }

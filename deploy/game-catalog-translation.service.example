@@ -1,5 +1,5 @@
 [Unit]
-Description=SwitchDex on-demand translation API
+Description=SwitchDex catalog and translation API
 After=network-online.target
 Wants=network-online.target
 

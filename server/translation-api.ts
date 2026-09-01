@@ -5,6 +5,8 @@ import { isPlausibleTranslation, splitDescription, descriptionSource as sourceOf
 import { createProvider, type Provider } from '../scripts/translation-providers';
 import { loadLocalEnv } from '../scripts/env';
 import type { Game } from '../src/data/schema';
+import { catalogHealth, handleCatalogRequest } from './catalog-api';
+import { syncCatalog } from './catalog-sync';
 
 await loadLocalEnv();
 
@@ -146,7 +148,8 @@ function sendJson(response: ServerResponse, status: number, body: unknown): void
 function isSameOrigin(request: IncomingMessage): boolean {
   const origin = request.headers.origin;
   if (!origin) return true;
-  try { return new URL(origin).host === request.headers.host; } catch { return false; }
+  const forwardedHost = String(request.headers['x-forwarded-host'] || '').split(',')[0].trim();
+  try { return new URL(origin).host === (forwardedHost || request.headers.host); } catch { return false; }
 }
 
 async function readBody(request: IncomingMessage): Promise<{ id?: unknown }> {
@@ -161,7 +164,11 @@ async function readBody(request: IncomingMessage): Promise<{ id?: unknown }> {
 }
 
 async function handleRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
-  if (request.method === 'GET' && request.url === '/health') return sendJson(response, 200, { ok: true });
+  if (await handleCatalogRequest(request, response, { cacheDir })) return;
+  if (request.method === 'GET' && request.url === '/health') {
+    const catalog = await catalogHealth({ cacheDir });
+    return sendJson(response, catalog.ready ? 200 : 503, { ok: catalog.ready, catalog });
+  }
   if (request.method !== 'POST' || request.url !== '/api/translate') return sendJson(response, 404, { error: 'No encontrado.' });
   if (!isSameOrigin(request)) return sendJson(response, 403, { error: 'Origen no permitido.' });
   const ip = String(request.headers['x-forwarded-for'] || request.socket.remoteAddress || '').split(',')[0].trim();
@@ -188,6 +195,14 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
   }
 }
 
+if (!(await catalogHealth({ cacheDir })).ready) {
+  try {
+    const summary = await syncCatalog({ cacheDir });
+    console.log(`[catalog] initial sync completed (${summary.counts.current} games)`);
+  } catch (error) {
+    console.error(`[catalog] initial sync failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+  }
+}
 if (!configuredModel) console.warn('[translate-api] TRANSLATION_MODEL is not configured');
 const server = createServer((request, response) => void handleRequest(request, response));
 server.listen(port, host, () => console.log(`[translate-api] listening on http://${host}:${port}`));

@@ -1,8 +1,8 @@
 ---
-import type { Game } from '../data/schema';
+import type { CatalogIndexItem } from '../data/schema';
 import GameCard from './GameCard.astro';
 
-interface Props { games: Game[]; }
+interface Props { games: CatalogIndexItem[]; }
 const { games } = Astro.props;
 ---
 

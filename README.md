@@ -1,12 +1,12 @@
 # SwitchDex
 
-Catálogo web estático, ligero y responsive para explorar títulos de juegos desde una fuente JSON configurable. Está construido con Astro y TypeScript y no necesita base de datos. El visor funciona sin Node en producción; la traducción opcional al vuelo utiliza un proceso Node mínimo separado.
+Catálogo web ligero y responsive para explorar títulos de juegos desde una fuente JSON configurable. Astro se ejecuta en modo SSR con el adaptador Node y obtiene los datos de una API Node independiente. El catálogo vive en un volumen persistente y puede actualizarse sin compilar ni redesplegar el frontend.
 
 ## Fuente de los datos
 
 SwitchDex no incluye ni mantiene ningún catálogo propio: el repositorio trae un catálogo ficticio para desarrollo y CI, y cada operador conecta su fuente mediante `CATALOG_SOURCE_URL`. El visor es genérico sobre metadatos: título, fechas, géneros, idiomas, tamaños, portadas y descripciones.
 
-El adaptador de referencia es `langegen-switch-games`, pensado para el formato JSON publicado por el proyecto público `Langegen/switch-games` (recopilación de metadatos de títulos con portadas e imágenes alojadas en servicios externos como FastPic). El visor solo consume los metadatos que esa fuente expone; su disponibilidad y contenido son responsabilidad de quien opera la fuente, y el catálogo se descarga y normaliza durante el build, no en el navegador.
+El adaptador de referencia es `langegen-switch-games`, pensado para el formato JSON publicado por el proyecto público `Langegen/switch-games` (recopilación de metadatos de títulos con portadas e imágenes alojadas en servicios externos como FastPic). El visor solo consume los metadatos que esa fuente expone; su disponibilidad y contenido son responsabilidad de quien opera la fuente. `npm run catalog:sync` descarga y normaliza la fuente fuera del build.
 
 Si aparece otra forma JSON, basta con añadir un adaptador nuevo en `src/data/adapters/` y seleccionarlo con `CATALOG_SOURCE_TYPE`; el modelo interno queda aislado de los nombres de campos de cada origen.
 
@@ -14,7 +14,7 @@ Si aparece otra forma JSON, basta con añadir un adaptador nuevo en `src/data/ad
 
 - **Catálogo en cuadrícula** con portadas, scroll infinito por bloques de 24 tarjetas y botón de respaldo accesible.
 - **Búsqueda instantánea por título** sobre un índice compacto, con ordenación por fecha o título (A–Z / Z–A). La búsqueda y el orden se reflejan en la URL para compartirlos.
-- **Fichas de detalle** prerenderizadas en `/game/[id]/`: portada grande, sinopsis, metadatos y galería de capturas con carga diferida.
+- **Fichas de detalle dinámicas** en `/game/[id]/`: portada grande, sinopsis, metadatos y galería de capturas con carga diferida, sin generar miles de páginas.
 - **Idiomas del juego con banderas**: cada ficha muestra los idiomas normalizados acompañados de su bandera, generada como SVG inline sin dependencias externas.
 - **Selector de español e inglés** en toda la interfaz; la preferencia se recuerda en el navegador y cada ficha muestra la descripción localizada disponible.
 - **Traducción con IA configurable**: descripciones sin versión ES/EN traducibles con OpenAI, Anthropic, Google Gemini, GLM, Kimi, OpenRouter, Ollama o LM Studio (ver «Traducción con IA local o en la nube»), tanto en lote como al vuelo desde la propia ficha.
@@ -30,19 +30,26 @@ Si aparece otra forma JSON, basta con añadir un adaptador nuevo en `src/data/ad
 ```bash
 npm install
 cp .env.example .env
+npm run catalog:sync
+npm run api:start
+```
+
+En otro terminal:
+
+```bash
 npm run dev
 ```
 
 Si `CATALOG_SOURCE_URL` no está definida, el actualizador usa `tests/fixtures/catalog.json`. Para probar la web sin red, elimina o deja vacía esa variable en `.env`.
 
-La compilación de producción genera únicamente archivos estáticos:
+La compilación de producción genera el servidor SSR. No descarga ni sincroniza el catálogo:
 
 ```bash
 npm run build
-npm run preview
+npm start
 ```
 
-El resultado queda en `dist/`. `npm run preview` inicia Astro Preview, la API de traducción y un proxy común en `http://localhost:4321`; `npm run preview:static` sirve únicamente los archivos generados.
+El frontend escucha en `PORT` (4321 por defecto). La API se inicia por separado con `npm run api:start`; ningún comando de arranque de la API ejecuta el build de Astro.
 
 ## Configuración
 
@@ -53,6 +60,7 @@ El resultado queda en `dist/`. `npm run preview` inicia Astro Preview, la API de
 | `CATALOG_FETCH_TIMEOUT_MS` | Timeout de descarga. | `30000` |
 | `CATALOG_MAX_BYTES` | Límite de respuesta. | `52428800` |
 | `CATALOG_CACHE_DIR` | Directorio de caché. | `.cache/catalog` |
+| `CATALOG_API_URL` | URL de la API vista desde el proceso SSR. | `http://127.0.0.1:8787` |
 | `CATALOG_INCLUDE_SOURCE_URLS` | Conserva enlaces informativos en el modelo interno (no se muestran en la web). | `false` |
 | `TRANSLATION_PROVIDER` | IA para traducciones: `openai`, `anthropic`, `gemini`, `glm`, `kimi`, `openrouter`, `ollama` o `lmstudio`. | `ollama` |
 | `TRANSLATION_API_KEY` | Clave del proveedor. Nunca llega al navegador. | Sin valor |
@@ -61,7 +69,7 @@ El resultado queda en `dist/`. `npm run preview` inicia Astro Preview, la API de
 | `TRANSLATION_BATCH_SIZE` | Fichas traducidas por petición en lote. | `4` |
 | `TRANSLATION_TIMEOUT_MS` | Timeout de cada petición de traducción. | `600000` |
 | `TRANSLATION_THINK` | Solo Ollama: separa el razonamiento del texto final. | `low` recomendado |
-| `TRANSLATION_API_HOST` | Interfaz del servicio de traducción. Mantener en localhost. | `127.0.0.1` |
+| `TRANSLATION_API_HOST` | Interfaz de la API. En contenedor debe ser `0.0.0.0`. | `127.0.0.1` |
 | `TRANSLATION_API_PORT` | Puerto interno para Caddy/Nginx. | `8787` |
 | `TRANSLATION_DAILY_LIMIT` | Máximo de fichas nuevas traducidas cada día. | `100` |
 | `TRANSLATION_HOURLY_IP_LIMIT` | Peticiones por IP y hora, incluidas las cacheadas. | `10` |
@@ -69,7 +77,7 @@ El resultado queda en `dist/`. `npm run preview` inicia Astro Preview, la API de
 | `SITE_NAME` | Nombre mostrado en metadatos. | `SwitchDex` |
 | `SITE_DESCRIPTION` | Descripción SEO. | Descripción incluida |
 
-`.env` está excluido de Git. No uses variables públicas para tokens: la fuente se descarga durante el build y no se expone al navegador.
+`.env` está excluido de Git. No uses variables públicas para tokens: la fuente y las credenciales solo las utiliza la API.
 
 Para el formato publicado por `Langegen/switch-games`, usa `CATALOG_SOURCE_TYPE=langegen-switch-games`. Este adaptador importa solo metadatos, limpia las etiquetas técnicas y las notas cirílicas añadidas a títulos latinos, y omite entradas cuyo título siga siendo cirílico. Los enlaces de la entrada quedan fuera salvo que se active explícitamente `CATALOG_INCLUDE_SOURCE_URLS=true`.
 
@@ -179,27 +187,30 @@ Las fichas sin versiones ES/EN muestran un botón **Traducir ahora**. El navegad
 npm run translation:server
 ```
 
-El servicio escucha únicamente en `127.0.0.1:8787` y usa el mismo `TRANSLATION_PROVIDER`/`TRANSLATION_MODEL` que el comando manual. Caddy o Nginx deben publicar solo `/api/translate` mediante los ejemplos incluidos en `deploy/`. Las traducciones se escriben atómicamente en `.cache/catalog/translations.json`, la misma caché que usa `catalog:translate`. Una respuesta cacheada no vuelve a llamar a la IA ni consume el límite diario. Si cambia el texto fuente, su hash invalida únicamente esa traducción.
+El servicio usa el mismo `TRANSLATION_PROVIDER`/`TRANSLATION_MODEL` que el comando manual. El frontend SSR publica `/api/translate` y lo reenvía a `CATALOG_API_URL`, por lo que las credenciales permanecen en la API. Las traducciones se escriben atómicamente en `.cache/catalog/translations.json`, la misma caché que usa `catalog:translate`. Una respuesta cacheada no vuelve a llamar a la IA ni consume el límite diario. Si cambia el texto fuente, su hash invalida únicamente esa traducción.
 
-Durante desarrollo, deja `npm run translation:server` abierto en un terminal y ejecuta `npm run dev` en otro. Astro redirige `/api` al servicio local automáticamente.
+Durante desarrollo, deja `npm run api:start` abierto en un terminal y ejecuta `npm run dev` en otro. Astro redirige `/api` al servicio local automáticamente.
 
 Para contener uso accidental o abusivo, el servicio aplica límites diarios persistentes y límites horarios en memoria por IP. Las peticiones simultáneas para una misma ficha comparten una única traducción en curso.
 
 ## Caché y actualización
 
 ```bash
-npm run catalog:update
+npm run catalog:sync
 npm run catalog:validate
 ```
 
 El actualizador sigue el patrón `descarga → valida → archivo temporal → reemplazo atómico`. Una descarga fallida reutiliza `.cache/catalog/source.json`; nunca destruye primero una copia válida. Si hay URL configurada pero no existe ni red ni caché, termina con un error controlado.
 
-El script crea:
+El sync compara por ID y contenido normalizado, aplica el patrón `descarga → valida → archivo temporal → reemplazo atómico` y crea:
 
 - `.cache/catalog/normalized.json`: documento interno para Astro.
-- `public/data/catalog-index.json`: índice compacto para buscar y ordenar por título; solo contiene ID, título, portada y fecha.
+- `.cache/catalog/source-normalized.json`: versión sin traducciones usada para comparar cambios.
+- `.cache/catalog/source.json`: última descarga válida como respaldo.
 
-Ambos se regeneran y no deben versionarse con datos reales.
+No modifica ni elimina `.cache/catalog/translations.json`. Su salida estándar es una sola línea JSON con `counts`, `added`, `updated` y `removed`; por ejemplo, n8n puede usar `added` para construir la notificación.
+
+Estos archivos se regeneran y no deben versionarse con datos reales.
 
 ## Verificación
 
@@ -211,56 +222,44 @@ npm run build
 
 Los tests cubren tamaños, años, idiomas, IDs, deduplicación y el adaptador. GitHub Actions usa siempre el fixture local, por lo que CI no depende de un endpoint externo.
 
-## Despliegue estático
+## Despliegue en Coolify
 
-### Caddy (recomendado)
+Se mantienen dos procesos deliberadamente separados:
 
-1. Compila el proyecto.
-2. Copia `dist/` a `/var/www/game-catalog/`.
-3. Adapta `deploy/Caddyfile.example` al dominio y ruta reales.
-4. Recarga Caddy.
+1. **API**: Build Pack `Dockerfile`, ubicación `/Dockerfile.api`, puerto `8787`. Añade todas las variables `CATALOG_*` y `TRANSLATION_*`, y monta un volumen persistente en `/app/.cache/catalog`. Este Dockerfile instala dependencias y ejecuta `npm run api:start`; no ejecuta `npm run build` de Astro.
+2. **Frontend**: Build Pack `Dockerfile`, ubicación `/Dockerfile.frontend`, puerto `4321`. Define `CATALOG_API_URL` con una URL que el contenedor pueda alcanzar, por ejemplo `https://api.example.com` si la API ya está desplegada aparte. Publica el dominio de SwitchDex únicamente en este servicio.
 
-### Nginx
+En el primer arranque, la API ejecuta un sync inicial solo si el volumen todavía no contiene un catálogo. También puedes abrir su terminal y ejecutar `npm run catalog:sync` para comprobar la configuración. Tanto la API como el frontend exponen `/health`; el health del frontend también comprueba que la API tenga un catálogo listo. Coolify requiere que el proceso escuche en `0.0.0.0`, valor ya incluido en ambos Dockerfiles. Consulta la documentación oficial de [Dockerfile](https://coolify.io/docs/applications/build-packs/dockerfile), [almacenamiento persistente](https://coolify.io/docs/knowledge-base/persistent-storage) y [health checks](https://coolify.io/docs/knowledge-base/health-checks).
 
-Usa `deploy/nginx.conf.example` como bloque de servidor, ajustando dominio y directorio. Incluye compresión, caché de assets y página 404.
+Fuera de Coolify, `deploy/Caddyfile.example` y `deploy/nginx.conf.example` muestran cómo publicar el frontend SSR. El frontend reenvía `/api/catalog`, `/api/game/:id` y `/api/translate` a `CATALOG_API_URL`; no hace falta exponer rutas distintas en el proxy frontal.
 
-Astro no forma parte del runtime: Caddy o Nginx sirven directamente `dist/`. Node solo es necesario si se activa el botón de traducción al vuelo.
+## Sincronización programada
 
-Para mantener activa la API opcional, adapta `deploy/game-catalog-translation.service.example` como servicio de usuario, copia la unidad a `~/.config/systemd/user/` y ejecuta:
+En **Configuration → Scheduled Tasks** de la aplicación API, crea una tarea sobre su contenedor:
 
-```bash
-systemctl --user daemon-reload
-systemctl --user enable --now game-catalog-translation.service
+```text
+Command: npm run --silent catalog:sync
+Frequency: 0 */6 * * *
 ```
 
-## Actualización programada
+Coolify ejecuta las tareas dentro del contenedor y conserva su salida. El comando escribe una sola línea JSON, así que n8n/Hermes puede analizar `counts.added` y recorrer `added`, cuyos elementos tienen `id` y `title`, para enviar la notificación. Si `counts.added` vale cero no es necesario hacer nada. La frecuencia usa la zona horaria configurada en el servidor de Coolify; véase [Scheduled Tasks](https://coolify.io/docs/core/automation/scheduled-tasks/overview).
 
-`deploy/update.sh` actualiza código, dependencias, catálogo y publicación. Configura las rutas mediante `APP_DIR` y `WEB_ROOT`; no requiere ejecutarse como root si el usuario tiene permisos.
-
-Ejemplo de cron diario:
-
-```cron
-15 4 * * * APP_DIR=/opt/game-catalog WEB_ROOT=/var/www/game-catalog /opt/game-catalog/deploy/update.sh >> /var/log/game-catalog-update.log 2>&1
-```
-
-Para regenerar solo el catálogo sin `git pull` ni `npm ci`:
-
-```bash
-CATALOG_ONLY=true deploy/update.sh
-```
+Para cron o un ejecutor externo puede usarse el mismo comando, o el envoltorio `deploy/update.sh`. `--silent` evita la cabecera de npm y deja únicamente el JSON en stdout. Ninguna de estas opciones recompila ni redespliega el frontend.
 
 ## Arquitectura
 
 ```text
-fuente JSON → adapter → normalizer → modelo interno → páginas Astro → dist/
+fuente JSON → sync → volumen persistente → API → Astro SSR → navegador
 ```
 
-- `src/data/`: adaptadores (`compatible-json`, `langegen-switch-games`), normalizador, tipos y carga del catálogo.
+- `src/data/`: adaptadores (`compatible-json`, `langegen-switch-games`), normalizador, tipos y cliente de la API.
 - `src/components/`: componentes Astro sin framework cliente, incluidos los idiomas con banderas de la ficha.
 - `src/scripts/catalog-ui.ts`: búsqueda por título, orden y scroll infinito en bloques de 24 tarjetas, con botón de respaldo accesible.
 - `scripts/translation-providers.ts`: capa de proveedores de IA compartida por el traductor por lotes y la API al vuelo.
-- `server/translation-api.ts`: servicio opcional de traducción bajo demanda.
-- `scripts/`: descarga, caché, traducción y validación.
-- `deploy/`: ejemplos para servidor estático y actualización.
+- `server/catalog-sync.ts`: descarga, comparación y escritura atómica del catálogo persistente.
+- `server/catalog-api.ts`: endpoints de índice y ficha.
+- `server/translation-api.ts`: proceso API que reúne catálogo y traducción bajo demanda.
+- `scripts/`: comandos de sync, traducción y validación.
+- `deploy/`: ejemplos de proxy y ejecución periódica.
 
-La búsqueda funciona sobre un índice mínimo. Las fichas se prerenderizan en `/game/[id]/`, las imágenes usan carga diferida y fallback local, y la búsqueda y el orden se reflejan en la URL para compartirlos. Las capturas que una fuente compatible entregue como miniaturas de FastPic se normalizan a su recurso de tamaño completo durante la importación.
+`GET /api/catalog` devuelve solo el índice mínimo usado por búsqueda y orden. `GET /api/game/:id` devuelve la ficha completa. Las rutas `/game/:id/` se resuelven en runtime, las imágenes usan carga diferida y fallback local, y la búsqueda y el orden se reflejan en la URL para compartirlos. Las capturas que una fuente compatible entregue como miniaturas de FastPic se normalizan a su recurso de tamaño completo durante la importación.

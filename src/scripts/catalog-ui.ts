@@ -1,6 +1,4 @@
-import type { CatalogIndexItem } from '../data/schema';
-
-interface CatalogIndexDocument { updatedAt: string; games: CatalogIndexItem[]; }
+import type { CatalogIndexDocument, CatalogIndexItem } from '../data/schema';
 type Locale = 'es' | 'en';
 
 const grid = document.querySelector<HTMLElement>('[data-game-grid]');
@@ -151,7 +149,7 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && search && document.activeElement === search) { search.value = ''; search.blur(); render(true); }
 });
 
-fetch('/data/catalog-index.json')
+fetch('/api/catalog/')
   .then((response) => {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json() as Promise<CatalogIndexDocument>;

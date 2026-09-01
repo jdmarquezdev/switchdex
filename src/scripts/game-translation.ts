@@ -46,7 +46,7 @@ button?.addEventListener('click', async () => {
   setState('loading');
 
   try {
-    const response = await fetch('/api/translate', {
+    const response = await fetch('/api/translate/', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id: control.dataset.gameId })
