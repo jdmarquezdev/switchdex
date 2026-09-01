@@ -1,0 +1,17 @@
+[Unit]
+Description=SwitchDex on-demand translation API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/game-catalog
+EnvironmentFile=/opt/game-catalog/.env
+ExecStart=/usr/bin/node /opt/game-catalog/node_modules/tsx/dist/cli.mjs /opt/game-catalog/server/translation-api.ts
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

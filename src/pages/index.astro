@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SearchBar from '../components/SearchBar.astro';
+import Filters from '../components/Filters.astro';
+import GameGrid from '../components/GameGrid.astro';
+import { loadCatalog } from '../data/catalog';
+
+const catalog = await loadCatalog();
+const games = catalog.games;
+const newestGames = [...games].sort((a, b) => String(b.releaseDate ?? b.year ?? '').localeCompare(String(a.releaseDate ?? a.year ?? '')));
+---
+
+<BaseLayout>
+  <section class="catalog-hero">
+    <div class="eyebrow"><span class="eyebrow-line"></span> <span data-i18n="hero.eyebrow">Colección digital</span> / {String(games.length).padStart(3, '0')}</div>
+    <div class="hero-copy">
+      <h1><span data-i18n="hero.title">Encuentra tu</span><br /><em data-i18n="hero.emphasis">próxima historia.</em></h1>
+      <p data-i18n="hero.body">Una biblioteca rápida y serena para encontrar juegos por su título.</p>
+    </div>
+    <div class="hero-note" aria-hidden="true"><span data-i18n="hero.explore">Explora</span><i></i><b>↓</b></div>
+  </section>
+
+  <section class="catalog-tools" aria-label="Buscar y ordenar catálogo" data-i18n-aria="tools.label">
+    <SearchBar />
+    <Filters />
+  </section>
+
+  <section class="catalog-results" aria-labelledby="results-title">
+    <div class="results-heading">
+      <div>
+        <p data-i18n="results.kicker">Selección completa</p>
+        <h2 id="results-title"><span data-results-count>{games.length}</span> <span data-i18n="results.unit">títulos</span></h2>
+      </div>
+    </div>
+    <p class="sr-only" aria-live="polite" data-results-live></p>
+    <GameGrid games={newestGames.slice(0, 24)} />
+  </section>
+  <script src="../scripts/catalog-ui.ts"></script>
+</BaseLayout>

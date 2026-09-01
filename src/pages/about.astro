@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Acerca de">
+  <article class="about-page">
+    <p class="detail-kicker" data-i18n="about.kicker">Acerca del archivo</p>
+    <h1><span data-i18n="about.title">Una colección que</span><br /><em data-i18n="about.emphasis">deja respirar a los juegos.</em></h1>
+    <div class="about-grid">
+      <p class="about-lead" data-i18n="about.lead">SwitchDex es un visor estático de títulos: rápido al abrir, sencillo de mantener y respetuoso con quien lo visita.</p>
+      <div class="about-body">
+        <p data-i18n="about.body1">No aloja juegos ni ofrece descargas. La fuente del catálogo la configura cada operador y se procesa durante la construcción del sitio.</p>
+        <p data-i18n="about.body2">La página final funciona sin base de datos, sin servidor de aplicación y sin analítica de terceros. Solo HTML, CSS y el JavaScript imprescindible para buscar y ordenar.</p>
+        <a class="source-link" href="/"><span data-i18n="about.cta">Explorar catálogo</span> <span class="source-arrow">→</span></a>
+      </div>
+    </div>
+  </article>
+</BaseLayout>

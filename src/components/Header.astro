@@ -1,0 +1,33 @@
+---
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <a class="brand" href="/" aria-label="SwitchDex, inicio" data-i18n-aria="brand.home">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <path class="index-lines" d="M5 9h8M5 16h11M5 23h8"></path>
+      <path class="switch-line" d="m20 22 6-12"></path>
+      <circle cx="20" cy="22" r="2.5"></circle><circle cx="26" cy="10" r="2.5"></circle>
+    </svg>
+    <span class="brand-copy"><strong>Switch</strong><em>Dex</em></span>
+  </a>
+
+  <nav aria-label="Navegación principal" data-i18n-aria="nav.main">
+    <a href="/" aria-current={currentPath === '/' ? 'page' : undefined} data-i18n="nav.catalog">Catálogo</a>
+    <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined} data-i18n="nav.about">Acerca de</a>
+  </nav>
+
+  <div class="header-actions">
+    <label class="locale-switcher">
+      <span class="sr-only" data-i18n="locale.label">Idioma</span>
+      <select data-locale-select aria-label="Idioma" data-i18n-aria="locale.label">
+        <option value="es">ES</option>
+        <option value="en">EN</option>
+      </select>
+    </label>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Cambiar tema" data-i18n-aria="theme.toggle">
+      <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path></svg>
+      <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.3A8.5 8.5 0 0 1 8.7 4a8.5 8.5 0 1 0 11.3 11.3Z"></path></svg>
+    </button>
+  </div>
+</header>

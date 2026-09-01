@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ScreenshotGallery from '../../components/ScreenshotGallery.astro';
+import GameLanguages from '../../components/GameLanguages.astro';
+import { loadCatalog } from '../../data/catalog';
+import { createExternalReviewLinks } from '../../data/external-links';
+import type { Game } from '../../data/schema';
+
+export async function getStaticPaths() {
+  const catalog = await loadCatalog();
+  return catalog.games.map((game) => ({ params: { id: game.id }, props: { game } }));
+}
+
+interface Props { game: Game; }
+const { game } = Astro.props;
+const reviewLinks = createExternalReviewLinks(game.title);
+const descriptionEs = game.descriptions?.es ?? game.description ?? game.descriptions?.en;
+const descriptionEn = game.descriptions?.en ?? game.description ?? game.descriptions?.es;
+const needsTranslation = Boolean(game.description || game.descriptions?.es || game.descriptions?.en)
+  && (!game.descriptions?.es || !game.descriptions?.en);
+---
+
+<BaseLayout title={game.title} description={descriptionEs ?? game.title} image={game.cover}>
+  <article class="detail-page">
+    <nav class="breadcrumb" aria-label="Migas de pan" data-i18n-aria="breadcrumb.label"><a href="/" data-i18n="nav.catalog">Catálogo</a><span>/</span><span aria-current="page">{game.title}</span></nav>
+    <div class="detail-grid">
+      <div class="detail-cover">
+        <div class="cover-frame">
+          <img src={game.cover || '/images/cover-placeholder.svg'} data-fallback="/images/cover-placeholder.svg" data-game-cover data-game-title={game.title} alt={`Portada de ${game.title}`} width="640" height="900" />
+        </div>
+      </div>
+
+      <div class="detail-copy">
+        <h1>{game.title}</h1>
+        {game.magnet && (
+          <a class="magnet-link magnet-link-hero" href={game.magnet}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 0a4 4 0 0 0 4-4V5a4 4 0 0 0-8 0v4a4 4 0 0 0 4 4zm-7 2v3a7 7 0 0 0 14 0v-3M12 21v-3"></path></svg>
+            <span data-i18n="detail.magnetAction">Abrir enlace magnet</span>
+          </a>
+        )}
+        <GameLanguages game={game} />
+        {(descriptionEs || descriptionEn) && (
+          <section class="detail-description" aria-labelledby="game-description-title">
+            <p class="detail-kicker" id="game-description-title" data-i18n="detail.descriptionKicker">Sinopsis</p>
+            {descriptionEs && <p class="description localized-copy" lang="es" data-copy-locale="es">{descriptionEs}</p>}
+            {descriptionEn && <p class="description localized-copy" lang="en" data-copy-locale="en">{descriptionEn}</p>}
+            {needsTranslation && (
+              <div class="translation-action" data-translation-control data-game-id={game.id}>
+                <button type="button" data-translation-button>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M9 3v2c0 4-2 7-5 9M6 9c1 2 3 4 6 5M14 19l3-8 3 8M15 16h4"></path></svg>
+                  <span data-i18n="detail.translateAction">Traducir ahora</span>
+                </button>
+                <p role="status" aria-live="polite" data-translation-status></p>
+              </div>
+            )}
+          </section>
+        )}
+        <aside class="external-reviews" aria-label="Críticas externas" data-i18n-aria="detail.reviewsLabel">
+          <p data-i18n="detail.reviewsKicker">Crítica y recepción</p>
+          <div class="external-review-links">
+            {reviewLinks.map((link, index) => (
+              <a href={link.url} target="_blank" rel="noreferrer">
+                <span class="review-index" aria-hidden="true">0{index + 1}</span>
+                <span><span data-i18n="detail.searchAt">Buscar en</span> <strong>{link.name}</strong></span>
+                <span class="external-arrow" aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </div>
+          <small data-i18n="detail.reviewsNote">La búsqueda se abre en el sitio externo para que puedas elegir la edición correcta.</small>
+        </aside>
+      </div>
+    </div>
+    <ScreenshotGallery screenshots={game.screenshots} title={game.title} />
+    <a class="back-link" href="/"><span class="back-arrow">←</span> <span data-i18n="detail.back">Volver a la colección</span></a>
+  </article>
+  {needsTranslation && <script src="../../scripts/game-translation.ts"></script>}
+</BaseLayout>

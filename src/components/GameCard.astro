@@ -1,0 +1,31 @@
+---
+import type { Game } from '../data/schema';
+
+interface Props { game: Game; index: number; }
+const { game, index } = Astro.props;
+---
+
+<article
+  class="game-card"
+  style={`--card-index: ${Math.min(index, 9)}`}
+  data-game-card
+>
+  <a class="cover-link" href={`/game/${game.id}/`} aria-label={`Ver ficha de ${game.title}`} data-game-link data-game-title={game.title}>
+    <span class="catalog-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+    <img
+      src={game.cover || '/images/cover-placeholder.svg'}
+      data-fallback="/images/cover-placeholder.svg"
+      data-game-cover
+      data-game-title={game.title}
+      alt={`Portada de ${game.title}`}
+      loading={index < 6 ? 'eager' : 'lazy'}
+      decoding="async"
+      width="480"
+      height="680"
+    />
+    <span class="cover-arrow" aria-hidden="true">↗</span>
+  </a>
+  <div class="card-copy">
+    <h2><a href={`/game/${game.id}/`}>{game.title}</a></h2>
+  </div>
+</article>

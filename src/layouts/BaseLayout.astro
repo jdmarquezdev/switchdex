@@ -1,0 +1,59 @@
+---
+import Header from '../components/Header.astro';
+import '../styles/global.css';
+
+interface Props { title?: string; description?: string; image?: string; }
+const siteName = import.meta.env.SITE_NAME || 'SwitchDex';
+const siteDescription = import.meta.env.SITE_DESCRIPTION || 'Una biblioteca ligera para explorar tu catálogo de juegos.';
+const { title, description = siteDescription, image } = Astro.props;
+const pageTitle = title ? `${title} — ${siteName}` : siteName;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#11100f" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={Astro.url} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    {image && <meta property="og:image" content={image} />}
+    <title>{pageTitle}</title>
+    <script is:inline>
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('catalog-theme') || 'dark';
+        document.documentElement.lang = localStorage.getItem('catalog-locale') === 'en' ? 'en' : 'es';
+      } catch {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#content" data-i18n="skip.content">Saltar al contenido</a>
+    <div class="site-shell">
+      <Header />
+      <main id="content"><slot /></main>
+      <footer class="site-footer">
+        <p><span>SwitchDex</span> · <span data-i18n="footer.catalog">catálogo de títulos</span></p>
+        <p data-i18n="footer.private">Estático, pequeño y sin rastreo.</p>
+        <p data-i18n="footer.disclaimer">Proyecto independiente. No afiliado ni respaldado por Nintendo.</p>
+      </footer>
+    </div>
+    <script src="../scripts/i18n.ts"></script>
+    <script is:inline>
+      document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+        const theme = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = theme;
+        try { localStorage.setItem('catalog-theme', theme); } catch {}
+      });
+      document.querySelectorAll('img[data-fallback]').forEach((image) => image.addEventListener('error', () => {
+        if (image.dataset.failed) return;
+        image.dataset.failed = 'true';
+        image.src = image.dataset.fallback;
+      }));
+    </script>
+  </body>
+</html>

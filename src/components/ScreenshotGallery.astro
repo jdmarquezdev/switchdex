@@ -1,0 +1,17 @@
+---
+interface Props { screenshots: string[]; title: string; }
+const { screenshots, title } = Astro.props;
+---
+
+{screenshots.length > 0 && (
+  <section class="screens-section" aria-labelledby="screens-title">
+    <div class="section-heading"><p data-i18n="gallery.kicker">Galería</p><h2 id="screens-title" data-i18n="gallery.title">Momentos del juego</h2></div>
+    <div class="screens-grid">
+      {screenshots.map((screenshot, index) => (
+        <a href={screenshot} target="_blank" rel="noreferrer">
+          <img src={screenshot} data-fallback="/images/screenshot-placeholder.svg" data-game-screenshot data-screenshot-index={index + 1} data-game-title={title} alt={`Captura ${index + 1} de ${title}`} loading="lazy" decoding="async" width="1280" height="720" />
+        </a>
+      ))}
+    </div>
+  </section>
+)}

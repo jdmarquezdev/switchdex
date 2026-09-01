@@ -1,0 +1,66 @@
+---
+import type { Game } from '../data/schema';
+
+interface Props { game: Game; }
+const { game } = Astro.props;
+
+/** Banderas SVG inline: dos franjas horizontales o verticales por idioma. */
+const FLAGS: Record<string, { label: string; flag: string }> = {
+  'Español': { label: 'Español', flag: 'es' },
+  'Inglés': { label: 'Inglés', flag: 'en' },
+  'Francés': { label: 'Francés', flag: 'fr' },
+  'Alemán': { label: 'Alemán', flag: 'de' },
+  'Italiano': { label: 'Italiano', flag: 'it' },
+  'Japonés': { label: 'Japonés', flag: 'ja' },
+  'Portugués': { label: 'Portugués', flag: 'pt' },
+  'Ruso': { label: 'Ruso', flag: 'ru' },
+  'Chino': { label: 'Chino', flag: 'zh' },
+  'Coreano': { label: 'Coreano', flag: 'ko' },
+  'Neerlandés': { label: 'Neerlandés', flag: 'nl' },
+  'Polaco': { label: 'Polaco', flag: 'pl' },
+  'Ucraniano': { label: 'Ucraniano', flag: 'uk' },
+  'Checo': { label: 'Checo', flag: 'cs' },
+  'Turco': { label: 'Turco', flag: 'tr' },
+  'Árabe': { label: 'Árabe', flag: 'ar' }
+};
+
+/** Franjas [color] de cada bandera, de arriba a abajo. */
+const FLAG_STRIPES: Record<string, string[]> = {
+  es: ['#AA151B', '#F1BF00', '#AA151B'],
+  en: ['#012169', '#C8102E', '#012169'],
+  fr: ['#0055A4', '#FFFFFF', '#EF4135'],
+  de: ['#000000', '#DD0000', '#FFCE00'],
+  it: ['#009246', '#FFFFFF', '#CE2B37'],
+  ja: ['#FFFFFF'],
+  pt: ['#006600', '#FF0000'],
+  ru: ['#FFFFFF', '#0039A6', '#D52B1E'],
+  zh: ['#DE2910'],
+  ko: ['#FFFFFF'],
+  nl: ['#AE1C28', '#FFFFFF', '#21468B'],
+  pl: ['#FFFFFF', '#DC143C'],
+  uk: ['#0057B7', '#FFDD00'],
+  cs: ['#FFFFFF', '#D7141A'],
+  tr: ['#E30A17'],
+  ar: ['#CE1126', '#FFFFFF', '#000000']
+};
+
+const languageFlags = game.languages
+  .map((language) => ({ language, flag: FLAGS[language]?.flag }))
+  .map((item) => item.flag ? { ...item, stripes: FLAG_STRIPES[item.flag] ?? ['#888'] } : undefined)
+  .filter((item): item is { language: string; flag: string; stripes: string[] } => Boolean(item));
+---
+
+{languageFlags.length > 0 && (
+  <ul class="language-flags" aria-label="Idiomas del juego" data-i18n-aria="detail.languagesLabel">
+    {languageFlags.map((item) => (
+      <li>
+        <svg viewBox="0 0 21 14" class="flag" role="img" aria-label={item.language}>
+          {item.stripes.map((color, index) => (
+            <rect x="0" y={(14 / item.stripes.length) * index} width="21" height={14 / item.stripes.length} fill={color} />
+          ))}
+        </svg>
+        <span>{item.language}</span>
+      </li>
+    ))}
+  </ul>
+)}

@@ -1,0 +1,13 @@
+---
+import type { Game } from '../data/schema';
+interface Props { game: Game; }
+const { game } = Astro.props;
+const rows = [
+  ['Desarrollo', game.developer], ['Publicación', game.publisher], ['Lanzamiento', game.releaseDate || game.year],
+  ['Tamaño', game.sizeLabel], ['Versión', game.version], ['Región', game.region], ['Title ID', game.titleId]
+].filter((row) => row[1]);
+---
+
+<dl class="game-meta">
+  {rows.map(([label, value]) => <div><dt>{label}</dt><dd>{value}</dd></div>)}
+</dl>
