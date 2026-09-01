@@ -18,7 +18,6 @@ Si aparece otra forma JSON, basta con añadir un adaptador nuevo en `src/data/ad
 - **Idiomas del juego con banderas**: cada ficha muestra los idiomas normalizados acompañados de su bandera, generada como SVG inline sin dependencias externas.
 - **Selector de español e inglés** en toda la interfaz; la preferencia se recuerda en el navegador y cada ficha muestra la descripción localizada disponible.
 - **Traducción con IA configurable**: descripciones sin versión ES/EN traducibles con OpenAI, Anthropic, Google Gemini, GLM, Kimi, OpenRouter, Ollama o LM Studio (ver «Traducción con IA local o en la nube»), tanto en lote como al vuelo desde la propia ficha.
-- **Crítica y recepción**: cada ficha enlaza búsquedas externas en OpenCritic y Metacritic, sin API, scraping ni claves.
 
 ## Requisitos
 
@@ -265,5 +264,3 @@ fuente JSON → adapter → normalizer → modelo interno → páginas Astro →
 - `deploy/`: ejemplos para servidor estático y actualización.
 
 La búsqueda funciona sobre un índice mínimo. Las fichas se prerenderizan en `/game/[id]/`, las imágenes usan carga diferida y fallback local, y la búsqueda y el orden se reflejan en la URL para compartirlos. Las capturas que una fuente compatible entregue como miniaturas de FastPic se normalizan a su recurso de tamaño completo durante la importación.
-
-Los enlaces de OpenCritic y Metacritic se generan a partir del título y abren la búsqueda del sitio correspondiente. No se construyen URLs de fichas por aproximación: ambos servicios pueden distinguir ediciones o plataformas y OpenCritic utiliza además un identificador numérico que el catálogo de origen no proporciona.

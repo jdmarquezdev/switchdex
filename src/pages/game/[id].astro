@@ -3,7 +3,6 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import ScreenshotGallery from '../../components/ScreenshotGallery.astro';
 import GameLanguages from '../../components/GameLanguages.astro';
 import { loadCatalog } from '../../data/catalog';
-import { createExternalReviewLinks } from '../../data/external-links';
 import type { Game } from '../../data/schema';
 
 export async function getStaticPaths() {
@@ -13,7 +12,6 @@ export async function getStaticPaths() {
 
 interface Props { game: Game; }
 const { game } = Astro.props;
-const reviewLinks = createExternalReviewLinks(game.title);
 const descriptionEs = game.descriptions?.es ?? game.description ?? game.descriptions?.en;
 const descriptionEn = game.descriptions?.en ?? game.description ?? game.descriptions?.es;
 const needsTranslation = Boolean(game.description || game.descriptions?.es || game.descriptions?.en)
@@ -34,7 +32,7 @@ const needsTranslation = Boolean(game.description || game.descriptions?.es || ga
         <h1>{game.title}</h1>
         {game.magnet && (
           <a class="magnet-link magnet-link-hero" href={game.magnet}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 0a4 4 0 0 0 4-4V5a4 4 0 0 0-8 0v4a4 4 0 0 0 4 4zm-7 2v3a7 7 0 0 0 14 0v-3M12 21v-3"></path></svg>
+            <span class="magnet-icon" aria-hidden="true">🧲</span>
             <span data-i18n="detail.magnetAction">Abrir enlace magnet</span>
           </a>
         )}
@@ -55,19 +53,6 @@ const needsTranslation = Boolean(game.description || game.descriptions?.es || ga
             )}
           </section>
         )}
-        <aside class="external-reviews" aria-label="Críticas externas" data-i18n-aria="detail.reviewsLabel">
-          <p data-i18n="detail.reviewsKicker">Crítica y recepción</p>
-          <div class="external-review-links">
-            {reviewLinks.map((link, index) => (
-              <a href={link.url} target="_blank" rel="noreferrer">
-                <span class="review-index" aria-hidden="true">0{index + 1}</span>
-                <span><span data-i18n="detail.searchAt">Buscar en</span> <strong>{link.name}</strong></span>
-                <span class="external-arrow" aria-hidden="true">↗</span>
-              </a>
-            ))}
-          </div>
-          <small data-i18n="detail.reviewsNote">La búsqueda se abre en el sitio externo para que puedas elegir la edición correcta.</small>
-        </aside>
       </div>
     </div>
     <ScreenshotGallery screenshots={game.screenshots} title={game.title} />
