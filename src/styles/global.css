@@ -108,6 +108,7 @@ img { display: block; max-width: 100%; }
 .results-heading h2 { margin: 0; font-family: var(--display); font-size: 32px; line-height: 1; letter-spacing: -.015em; text-transform: uppercase; }
 .results-heading h2 [data-results-count] { color: var(--accent); }
 .results-heading .updated-at { display: flex; align-items: center; gap: 9px; margin-bottom: 2px; letter-spacing: .12em; }
+.results-heading .updated-at time { color: var(--text); white-space: nowrap; }
 .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px color-mix(in srgb, var(--lime) 12%, transparent); }
 .status-dot.cached { background: var(--accent-soft); }
 .game-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: 16px; row-gap: 44px; }
@@ -265,7 +266,7 @@ html[lang='es'] .localized-copy[data-copy-locale='es'], html[lang='en'] .localiz
   .sort-filter { grid-column: 1 / -1; }
   .clear-filters { position: absolute; top: 7px; right: 45px; width: 36px; height: 36px; border: 0; }
   .catalog-results { padding: 44px 0 96px; }
-  .results-heading { margin-bottom: 24px; }
+  .results-heading { align-items: start; flex-direction: column; gap: 14px; margin-bottom: 24px; }
   .results-heading .updated-at { font-size: 8px; }
   .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 10px; row-gap: 32px; }
   .card-copy h2 { font-size: 15px; }

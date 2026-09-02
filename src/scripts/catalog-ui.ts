@@ -10,6 +10,7 @@ const live = document.querySelector<HTMLElement>('[data-results-live]');
 const empty = document.querySelector<HTMLElement>('[data-empty-state]');
 const loadMore = document.querySelector<HTMLButtonElement>('[data-load-more]');
 const loadMoreWrap = document.querySelector<HTMLElement>('[data-load-more-wrap]');
+const catalogUpdated = document.querySelector<HTMLTimeElement>('[data-catalog-updated]');
 
 let games: CatalogIndexItem[] = [];
 let matchedGames: CatalogIndexItem[] = [];
@@ -25,6 +26,16 @@ const copy = {
 
 const locale = (): Locale => document.documentElement.lang === 'en' ? 'en' : 'es';
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().trim();
+
+function updateCatalogTimestamp(value?: string): void {
+  if (!catalogUpdated) return;
+  if (value) catalogUpdated.dateTime = value;
+  const date = new Date(catalogUpdated.dateTime);
+  if (Number.isNaN(date.getTime())) return;
+  catalogUpdated.textContent = new Intl.DateTimeFormat(locale() === 'en' ? 'en-GB' : 'es-ES', {
+    dateStyle: 'medium', timeStyle: 'short'
+  }).format(date);
+}
 
 function matches(game: CatalogIndexItem, query: string): boolean {
   return !query || normalize(game.title).includes(query);
@@ -138,12 +149,13 @@ function enableInfiniteScroll(): void {
 const params = new URLSearchParams(location.search);
 if (search) search.value = params.get('q') || '';
 if (sort) sort.value = params.get('sort') || 'newest';
+updateCatalogTimestamp();
 
 search?.addEventListener('input', () => render(true));
 sort?.addEventListener('change', () => render(true));
 loadMore?.addEventListener('click', appendNextPage);
 document.querySelectorAll('[data-clear-search]').forEach((button) => button.addEventListener('click', clearSearch));
-document.addEventListener('catalog:locale', () => render());
+document.addEventListener('catalog:locale', () => { updateCatalogTimestamp(); render(); });
 document.addEventListener('keydown', (event) => {
   if (event.key === '/' && document.activeElement?.tagName !== 'INPUT') { event.preventDefault(); search?.focus(); }
   if (event.key === 'Escape' && search && document.activeElement === search) { search.value = ''; search.blur(); render(true); }
@@ -156,6 +168,7 @@ fetch('/api/catalog')
   })
   .then((catalog) => {
     games = catalog.games;
+    updateCatalogTimestamp(catalog.updatedAt);
     render(true);
     enableInfiniteScroll();
   })

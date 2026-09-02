@@ -8,6 +8,9 @@ import { loadCatalog } from '../data/catalog';
 const catalog = await loadCatalog();
 const games = catalog.games;
 const newestGames = [...games].sort((a, b) => String(b.releaseDate ?? b.year ?? '').localeCompare(String(a.releaseDate ?? a.year ?? '')));
+const initialUpdatedAt = new Intl.DateTimeFormat('es-ES', {
+  day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+}).format(new Date(catalog.updatedAt));
 ---
 
 <BaseLayout>
@@ -31,6 +34,10 @@ const newestGames = [...games].sort((a, b) => String(b.releaseDate ?? b.year ?? 
         <p data-i18n="results.kicker">Selección completa</p>
         <h2 id="results-title"><span data-results-count>{games.length}</span> <span data-i18n="results.unit">títulos</span></h2>
       </div>
+      <p class="updated-at">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span><span data-i18n="results.updated">Última actualización:</span> <time datetime={catalog.updatedAt} data-catalog-updated>{initialUpdatedAt} UTC</time></span>
+      </p>
     </div>
     <p class="sr-only" aria-live="polite" data-results-live></p>
     <GameGrid games={newestGames.slice(0, 24)} />
