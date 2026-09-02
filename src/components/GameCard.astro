@@ -10,7 +10,7 @@ const { game, index } = Astro.props;
   style={`--card-index: ${Math.min(index, 9)}`}
   data-game-card
 >
-  <a class="cover-link" href={`/game/${game.id}/`} aria-label={`Ver ficha de ${game.title}`} data-game-link data-game-title={game.title}>
+  <a class="cover-link" href={`/game/${encodeURIComponent(game.id)}`} aria-label={`Ver ficha de ${game.title}`} data-game-link data-game-title={game.title}>
     <span class="catalog-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
     <img
       src={game.cover || '/images/cover-placeholder.svg'}
@@ -26,6 +26,6 @@ const { game, index } = Astro.props;
     <span class="cover-arrow" aria-hidden="true">↗</span>
   </a>
   <div class="card-copy">
-    <h2><a href={`/game/${game.id}/`}>{game.title}</a></h2>
+    <h2><a href={`/game/${encodeURIComponent(game.id)}`}>{game.title}</a></h2>
   </div>
 </article>

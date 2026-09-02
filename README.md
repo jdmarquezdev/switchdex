@@ -14,7 +14,7 @@ Si aparece otra forma JSON, basta con añadir un adaptador nuevo en `src/data/ad
 
 - **Catálogo en cuadrícula** con portadas, scroll infinito por bloques de 24 tarjetas y botón de respaldo accesible.
 - **Búsqueda instantánea por título** sobre un índice compacto, con ordenación por fecha o título (A–Z / Z–A). La búsqueda y el orden se reflejan en la URL para compartirlos.
-- **Fichas de detalle dinámicas** en `/game/[id]/`: portada grande, sinopsis, metadatos y galería de capturas con carga diferida, sin generar miles de páginas.
+- **Fichas de detalle dinámicas** en `/game/[id]`: portada grande, sinopsis, metadatos y galería de capturas con carga diferida, sin generar miles de páginas.
 - **Idiomas del juego con banderas**: cada ficha muestra los idiomas normalizados acompañados de su bandera, generada como SVG inline sin dependencias externas.
 - **Selector de español e inglés** en toda la interfaz; la preferencia se recuerda en el navegador y cada ficha muestra la descripción localizada disponible.
 - **Traducción con IA configurable**: descripciones sin versión ES/EN traducibles con OpenAI, Anthropic, Google Gemini, GLM, Kimi, OpenRouter, Ollama o LM Studio (ver «Traducción con IA local o en la nube»), tanto en lote como al vuelo desde la propia ficha.
@@ -262,4 +262,4 @@ fuente JSON → sync → volumen persistente → API → Astro SSR → navegador
 - `scripts/`: comandos de sync, traducción y validación.
 - `deploy/`: ejemplos de proxy y ejecución periódica.
 
-`GET /api/catalog` devuelve solo el índice mínimo usado por búsqueda y orden. `GET /api/game/:id` devuelve la ficha completa. Las rutas `/game/:id/` se resuelven en runtime, las imágenes usan carga diferida y fallback local, y la búsqueda y el orden se reflejan en la URL para compartirlos. Las capturas que una fuente compatible entregue como miniaturas de FastPic se normalizan a su recurso de tamaño completo durante la importación.
+`GET /api/catalog` devuelve solo el índice mínimo usado por búsqueda y orden. `GET /api/game/:id` devuelve la ficha completa. Las rutas `/game/:id` se resuelven en runtime, las imágenes usan carga diferida y fallback local, y la búsqueda y el orden se reflejan en la URL para compartirlos. Las capturas que una fuente compatible entregue como miniaturas de FastPic se normalizan a su recurso de tamaño completo durante la importación.

@@ -5,7 +5,7 @@ export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   site: process.env.SITE_URL || 'https://catalog.example.com',
-  trailingSlash: 'always',
+  trailingSlash: 'never',
   vite: {
     server: {
       proxy: {

@@ -10,7 +10,7 @@ const currentPath = Astro.url.pathname;
 
   <nav aria-label="Navegación principal" data-i18n-aria="nav.main">
     <a href="/" aria-current={currentPath === '/' ? 'page' : undefined} data-i18n="nav.catalog">Catálogo</a>
-    <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined} data-i18n="nav.about">Acerca de</a>
+    <a href="/about" aria-current={currentPath === '/about' ? 'page' : undefined} data-i18n="nav.about">Acerca de</a>
   </nav>
 
   <div class="header-actions">

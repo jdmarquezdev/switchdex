@@ -44,7 +44,7 @@ function createCard(game: CatalogIndexItem, index: number): HTMLElement | undefi
   const card = fragment?.querySelector<HTMLElement>('.game-card');
   if (!card) return undefined;
 
-  const gameUrl = `/game/${encodeURIComponent(game.id)}/`;
+  const gameUrl = `/game/${encodeURIComponent(game.id)}`;
   const coverLink = card.querySelector<HTMLAnchorElement>('[data-card-cover-link]');
   const titleLink = card.querySelector<HTMLAnchorElement>('[data-card-title-link]');
   const cover = card.querySelector<HTMLImageElement>('[data-card-cover]');
