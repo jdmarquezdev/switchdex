@@ -149,7 +149,7 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && search && document.activeElement === search) { search.value = ''; search.blur(); render(true); }
 });
 
-fetch('/api/catalog/')
+fetch('/api/catalog')
   .then((response) => {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json() as Promise<CatalogIndexDocument>;
