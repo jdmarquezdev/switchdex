@@ -60,6 +60,9 @@ El frontend escucha en `PORT` (4321 por defecto). La API se inicia por separado 
 | `CATALOG_FETCH_TIMEOUT_MS` | Timeout de descarga. | `30000` |
 | `CATALOG_MAX_BYTES` | Límite de respuesta. | `52428800` |
 | `CATALOG_CACHE_DIR` | Directorio de caché. | `.cache/catalog` |
+| `CATALOG_SYNC_ENABLED` | Activa la comprobación periódica dentro de la API. | `true` |
+| `CATALOG_SYNC_INTERVAL_MINUTES` | Minutos entre comprobaciones, contados al terminar cada ciclo. | `60` |
+| `CATALOG_SOURCE_SHA_URL` | Endpoint GitHub Contents que devuelve el SHA; se deduce de URLs `raw.githubusercontent.com`. | Automático |
 | `CATALOG_API_URL` | URL de la API vista desde el proceso SSR. | `http://127.0.0.1:8787` |
 | `CATALOG_INCLUDE_SOURCE_URLS` | Conserva enlaces informativos en el modelo interno (no se muestran en la web). | `false` |
 | `TRANSLATION_PROVIDER` | IA para traducciones: `openai`, `anthropic`, `gemini`, `glm`, `kimi`, `openrouter`, `ollama` o `lmstudio`. | `ollama` |
@@ -203,6 +206,8 @@ npm run catalog:validate
 
 El actualizador sigue el patrón `descarga → valida → archivo temporal → reemplazo atómico`. Una descarga fallida reutiliza `.cache/catalog/source.json`; nunca destruye primero una copia válida. Si hay URL configurada pero no existe ni red ni caché, termina con un error controlado.
 
+La API comprueba periódicamente el SHA del archivo con la API de contenidos de GitHub. Si coincide con `.cache/catalog/source-state.json`, no descarga el catálogo; si cambia, ejecuta la sincronización y guarda `{ sha, syncedAt }` únicamente después de completarla. Un fallo de red, rate limit o respuesta inválida conserva el catálogo actual y se reintenta en el siguiente ciclo. El scheduler usa `setTimeout` encadenado, por lo que nunca solapa dos ciclos propios. Para fuentes que no usen `raw.githubusercontent.com`, configura `CATALOG_SOURCE_SHA_URL` con un endpoint compatible que devuelva `{ "sha": "..." }`.
+
 El sync compara por ID y contenido normalizado, aplica el patrón `descarga → valida → archivo temporal → reemplazo atómico` y crea:
 
 - `.cache/catalog/normalized.json`: documento interno para Astro.
@@ -236,16 +241,9 @@ Fuera de Coolify, `deploy/Caddyfile.example` y `deploy/nginx.conf.example` muest
 
 ## Sincronización programada
 
-En **Configuration → Scheduled Tasks** de la aplicación API, crea una tarea sobre su contenedor:
+La API incorpora la programación y no necesita cron, tareas de Coolify ni n8n. Está activa por defecto cada 60 minutos con `CATALOG_SYNC_ENABLED=true` y `CATALOG_SYNC_INTERVAL_MINUTES=60`. Tras cada ciclo programa el siguiente, evitando solapamientos. En el primer arranque mantiene el comportamiento existente: si el volumen no contiene un catálogo válido, realiza primero una sincronización inicial.
 
-```text
-Command: npm run --silent catalog:sync
-Frequency: 0 */6 * * *
-```
-
-Coolify ejecuta las tareas dentro del contenedor y conserva su salida. El comando escribe una sola línea JSON, así que n8n/Hermes puede analizar `counts.added` y recorrer `added`, cuyos elementos tienen `id` y `title`, para enviar la notificación. Si `counts.added` vale cero no es necesario hacer nada. La frecuencia usa la zona horaria configurada en el servidor de Coolify; véase [Scheduled Tasks](https://coolify.io/docs/core/automation/scheduled-tasks/overview).
-
-Para cron o un ejecutor externo puede usarse el mismo comando, o el envoltorio `deploy/update.sh`. `--silent` evita la cabecera de npm y deja únicamente el JSON en stdout. Ninguna de estas opciones recompila ni redespliega el frontend.
+El comando manual `npm run --silent catalog:sync` y `deploy/update.sh` siguen disponibles para operaciones puntuales. Ninguna opción recompila ni redespliega el frontend.
 
 ## Arquitectura
 
@@ -258,6 +256,7 @@ fuente JSON → sync → volumen persistente → API → Astro SSR → navegador
 - `src/scripts/catalog-ui.ts`: búsqueda por título, orden y scroll infinito en bloques de 24 tarjetas, con botón de respaldo accesible.
 - `scripts/translation-providers.ts`: capa de proveedores de IA compartida por el traductor por lotes y la API al vuelo.
 - `server/catalog-sync.ts`: descarga, comparación y escritura atómica del catálogo persistente.
+- `server/catalog-scheduler.ts`: detección por SHA y scheduler periódico interno sin solapamientos.
 - `server/catalog-api.ts`: endpoints de índice y ficha.
 - `server/translation-api.ts`: proceso API que reúne catálogo y traducción bajo demanda.
 - `scripts/`: comandos de sync, traducción y validación.

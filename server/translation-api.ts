@@ -7,6 +7,7 @@ import { loadLocalEnv } from '../scripts/env';
 import type { Game } from '../src/data/schema';
 import { catalogHealth, handleCatalogRequest } from './catalog-api';
 import { syncCatalog } from './catalog-sync';
+import { startCatalogSyncScheduler } from './catalog-scheduler';
 import { isAllowedOrigin, parseAllowedOrigins } from './translation-origin';
 
 await loadLocalEnv();
@@ -198,6 +199,7 @@ if (!(await catalogHealth({ cacheDir })).ready) {
     console.error(`[catalog] initial sync failed: ${error instanceof Error ? error.message : 'unknown error'}`);
   }
 }
+startCatalogSyncScheduler({ cacheDir });
 if (!configuredModel) console.warn('[translate-api] TRANSLATION_MODEL is not configured');
 const server = createServer((request, response) => void handleRequest(request, response));
 server.listen(port, host, () => console.log(`[translate-api] listening on http://${host}:${port}`));
