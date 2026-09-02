@@ -7,6 +7,7 @@ import { loadLocalEnv } from '../scripts/env';
 import type { Game } from '../src/data/schema';
 import { catalogHealth, handleCatalogRequest } from './catalog-api';
 import { syncCatalog } from './catalog-sync';
+import { isAllowedOrigin, parseAllowedOrigins } from './translation-origin';
 
 await loadLocalEnv();
 
@@ -19,6 +20,7 @@ const host = process.env.TRANSLATION_API_HOST || '127.0.0.1';
 const port = positiveInteger(process.env.TRANSLATION_API_PORT, 8787);
 const dailyLimit = positiveInteger(process.env.TRANSLATION_DAILY_LIMIT, 100);
 const hourlyIpLimit = positiveInteger(process.env.TRANSLATION_HOURLY_IP_LIMIT, 10);
+const allowedOrigins = parseAllowedOrigins(process.env.TRANSLATION_ALLOWED_ORIGINS);
 
 function positiveInteger(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
@@ -145,13 +147,6 @@ function sendJson(response: ServerResponse, status: number, body: unknown): void
   response.end(JSON.stringify(body));
 }
 
-function isSameOrigin(request: IncomingMessage): boolean {
-  const origin = request.headers.origin;
-  if (!origin) return true;
-  const forwardedHost = String(request.headers['x-forwarded-host'] || '').split(',')[0].trim();
-  try { return new URL(origin).host === (forwardedHost || request.headers.host); } catch { return false; }
-}
-
 async function readBody(request: IncomingMessage): Promise<{ id?: unknown }> {
   let body = '';
   for await (const chunk of request) {
@@ -170,7 +165,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
     return sendJson(response, catalog.ready ? 200 : 503, { ok: catalog.ready, catalog });
   }
   if (request.method !== 'POST' || request.url !== '/api/translate') return sendJson(response, 404, { error: 'No encontrado.' });
-  if (!isSameOrigin(request)) return sendJson(response, 403, { error: 'Origen no permitido.' });
+  if (!isAllowedOrigin(request, allowedOrigins)) return sendJson(response, 403, { error: 'Origen no permitido.' });
   const ip = String(request.headers['x-forwarded-for'] || request.socket.remoteAddress || '').split(',')[0].trim();
   if (!allowIp(ip)) return sendJson(response, 429, { error: 'Has alcanzado el límite temporal de traducciones.' });
 

@@ -71,6 +71,7 @@ El frontend escucha en `PORT` (4321 por defecto). La API se inicia por separado 
 | `TRANSLATION_THINK` | Solo Ollama: separa el razonamiento del texto final. | `low` recomendado |
 | `TRANSLATION_API_HOST` | Interfaz de la API. En contenedor debe ser `0.0.0.0`. | `127.0.0.1` |
 | `TRANSLATION_API_PORT` | Puerto interno para Caddy/Nginx. | `8787` |
+| `TRANSLATION_ALLOWED_ORIGINS` | Orígenes web completos permitidos, separados por comas y con coincidencia exacta. | Mismo host de la API (compatibilidad) |
 | `TRANSLATION_DAILY_LIMIT` | Máximo de fichas nuevas traducidas cada día. | `100` |
 | `TRANSLATION_HOURLY_IP_LIMIT` | Peticiones por IP y hora, incluidas las cacheadas. | `10` |
 | `SITE_URL` | URL canónica del sitio. | `https://catalog.example.com` |
@@ -187,7 +188,7 @@ Las fichas sin versiones ES/EN muestran un botón **Traducir ahora**. El navegad
 npm run translation:server
 ```
 
-El servicio usa el mismo `TRANSLATION_PROVIDER`/`TRANSLATION_MODEL` que el comando manual. El frontend SSR publica `/api/translate` y lo reenvía a `CATALOG_API_URL`, por lo que las credenciales permanecen en la API. Las traducciones se escriben atómicamente en `.cache/catalog/translations.json`, la misma caché que usa `catalog:translate`. Una respuesta cacheada no vuelve a llamar a la IA ni consume el límite diario. Si cambia el texto fuente, su hash invalida únicamente esa traducción.
+El servicio usa el mismo `TRANSLATION_PROVIDER`/`TRANSLATION_MODEL` que el comando manual. El frontend SSR publica `/api/translate` y lo reenvía a `CATALOG_API_URL`, por lo que las credenciales permanecen en la API. Si el frontend y la API usan hosts distintos, configura en la API los orígenes completos autorizados, sin barra final, por ejemplo `TRANSLATION_ALLOWED_ORIGINS=https://switchdex.jdmarquez.dev`. Se pueden indicar varios separados por comas. Las traducciones se escriben atómicamente en `.cache/catalog/translations.json`, la misma caché que usa `catalog:translate`. Una respuesta cacheada no vuelve a llamar a la IA ni consume el límite diario. Si cambia el texto fuente, su hash invalida únicamente esa traducción.
 
 Durante desarrollo, deja `npm run api:start` abierto en un terminal y ejecuta `npm run dev` en otro. Astro redirige `/api` al servicio local automáticamente.
 
