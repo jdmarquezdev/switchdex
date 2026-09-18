@@ -2,8 +2,21 @@ import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { adaptCompatibleJson } from '../src/data/adapters/compatible-json';
 import { adaptLangegenSwitchGames } from '../src/data/adapters/langegen-switch-games';
+import { normalizeCatalog } from '../src/data/normalize';
+import { toIndexItem } from '../src/data/catalog';
 
 describe('compatible-json adapter', () => {
+  it('conserva la fecha completa desde la fuente hasta el índice de ordenación', () => {
+    const entries = adaptCompatibleJson([
+      { id: 'older', title: 'A Homebrew', year: 2026, release_date: '2026-09-17' },
+      { id: 'newer', title: 'Z Homebrew', year: 2026, release_date: '2026-09-18' }
+    ]);
+    const index = normalizeCatalog(entries).games.map(toIndexItem);
+    expect(index.map((game) => game.releaseDate)).toEqual(['2026-09-17', '2026-09-18']);
+    expect([...index].sort((a, b) => b.releaseDate!.localeCompare(a.releaseDate!)).map((game) => game.id))
+      .toEqual(['newer', 'older']);
+  });
+
   it('adapta wrappers y alias de campos', async () => {
     const fixture = JSON.parse(await readFile('tests/fixtures/catalog.json', 'utf8')) as unknown;
     const entries = adaptCompatibleJson(fixture);

@@ -87,6 +87,8 @@ Para el formato publicado por `Langegen/switch-games`, usa `CATALOG_SOURCE_TYPE=
 
 La fecha de publicación procede del campo `year` de esa fuente. El normalizador interpreta años, meses rusos, fechas completas y rangos; cuando una recopilación contiene varias fechas utiliza la más reciente. La mayoría de entradas solo tiene precisión mensual, así que los títulos del mismo mes se desempatan alfabéticamente.
 
+Las fechas ISO (`YYYY-MM-DD` o `YYYY-MM`) conservan su precisión al importarse. El orden «Más recientes» usa la fecha de lanzamiento disponible, no la fecha de incorporación al catálogo, e incluye las fechas futuras que indique la fuente. Si el origen solo proporciona el mes, no se inventa el día. Tras actualizar el normalizador, ejecuta `npm run catalog:sync` para aplicar la corrección a los datos cacheados.
+
 ## Formato de catálogo
 
 El adaptador acepta un array de entradas o un objeto con una de estas claves: `games`, `items`, `data`, `catalog` o `results`. También reconoce alias frecuentes:

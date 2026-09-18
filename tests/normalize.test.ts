@@ -22,6 +22,21 @@ describe('parseYear', () => {
 });
 
 describe('parseReleaseDate', () => {
+  it('conserva mes y día en fechas ISO, incluidas fechas ya normalizadas', () => {
+    for (const date of ['2026', '2026-09', '2026-09-18', '2024-02-29']) {
+      expect(parseReleaseDate(date)).toBe(date);
+    }
+    expect(parseReleaseDate('2026-09-18T12:30:00Z')).toBe('2026-09-18');
+    expect(parseReleaseDate('2026-9-8')).toBe('2026-09-08');
+    expect(parseReleaseDate('2025-12-31 / 2026-09-18')).toBe('2026-09-18');
+  });
+
+  it('rechaza fechas ISO imposibles sin degradarlas a un año válido', () => {
+    expect(parseReleaseDate('2026-02-29')).toBeUndefined();
+    expect(parseReleaseDate('2026-13-01')).toBeUndefined();
+    expect(parseReleaseDate('2026-09-31')).toBeUndefined();
+  });
+
   it('normaliza fechas de publicación con meses rusos y fechas completas', () => {
     expect(parseReleaseDate('2026, август')).toBe('2026-08');
     expect(parseReleaseDate('2019, 04 октября')).toBe('2019-10-04');

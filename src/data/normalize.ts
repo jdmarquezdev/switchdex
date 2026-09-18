@@ -132,6 +132,12 @@ export function parseReleaseDate(value: unknown): string | undefined {
   if (!text) return undefined;
   const candidates: DateCandidate[] = [];
 
+  // Consume numeric dates before looking for standalone years so their precision survives.
+  const remainingText = text.replace(/\b((?:19|20)\d{2})-(\d{1,2})(?:-(\d{1,2}))?(?=\b|T)/g, (_match, year: string, month: string, day?: string) => {
+    candidates.push({ year: Number(year), month: Number(month), day: day ? Number(day) : undefined });
+    return ' ';
+  });
+
   for (const match of text.matchAll(/\b(\d{1,2})\.(\d{1,2})\.((?:19|20)\d{2})\b/g)) {
     candidates.push({ year: Number(match[3]), month: Number(match[2]), day: Number(match[1]) });
   }
@@ -142,7 +148,7 @@ export function parseReleaseDate(value: unknown): string | undefined {
   }
 
   const yearFirstPattern = new RegExp(`\\b((?:19|20)\\d{2})(?:\\s*,?\\s*(\\d{1,2})?\\s*(${MONTH_PATTERN}))?`, 'giu');
-  for (const match of text.matchAll(yearFirstPattern)) {
+  for (const match of remainingText.matchAll(yearFirstPattern)) {
     candidates.push({ year: Number(match[1]), month: match[3] ? parseMonth(match[3]) : undefined, day: match[2] ? Number(match[2]) : undefined });
   }
 
