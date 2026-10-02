@@ -89,10 +89,10 @@ describe('catalog sync', () => {
     expect((await document()).games[0].addedAt).toBe(first.updatedAt);
   });
 
-  it('migra cachés anteriores sin inventar fechas ni contabilizarlas como cambios del origen', async () => {
+  it('migra cachés anteriores usando el lanzamiento sin contabilizarlo como cambio del origen', async () => {
     const cacheDir = await temporaryDirectory();
     const fixturePath = join(cacheDir, 'fixture.json');
-    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha' }]);
+    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha', release_date: '2025-07' }]);
     await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
     const path = join(cacheDir, 'normalized.json');
     const legacy = JSON.parse(await readFile(path, 'utf8')) as CatalogDocument;
@@ -101,10 +101,10 @@ describe('catalog sync', () => {
     await writeFile(path, JSON.stringify(legacy));
     await unlink(join(cacheDir, 'source-normalized.json'));
     await unlink(join(cacheDir, 'first-seen.json'));
-    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha' }, { id: 'beta', title: 'Beta' }]);
+    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha', release_date: '2025-07' }, { id: 'beta', title: 'Beta' }]);
     const result = await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
     const migrated = JSON.parse(await readFile(path, 'utf8')) as CatalogDocument;
-    expect(migrated.games[0].addedAt).toBeUndefined();
+    expect(migrated.games[0].addedAt).toBe('2025-07');
     expect(migrated.games[1].addedAt).toBe(result.updatedAt);
     expect(result.counts).toMatchObject({ added: 1, updated: 0 });
     expect((await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' })).counts.updated).toBe(0);

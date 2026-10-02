@@ -11,11 +11,18 @@ const games: CatalogIndexItem[] = [
 const ids = (items: CatalogIndexItem[]) => items.map((game) => game.id);
 
 describe('catalog listing', () => {
-  it('ordena por incorporación, independientemente del lanzamiento, con desconocidas al final', () => {
-    expect(ids(selectCatalogGames(games))).toEqual(['new', 'old', 'legacy']);
+  it('ordena por incorporación y usa el lanzamiento como aproximación en las entradas heredadas', () => {
+    expect(ids(selectCatalogGames(games))).toEqual(['legacy', 'new', 'old']);
     expect(ids(selectCatalogGames(games, '', 'oldest'))).toEqual(['old', 'new', 'legacy']);
     expect(ids(selectCatalogGames(games, '', 'release-newest'))).toEqual(['legacy', 'old', 'new']);
     expect(ids(selectCatalogGames(games, '', 'release-oldest', true))).toEqual(['new', 'old', 'legacy', 'demo']);
+  });
+
+  it('usa el año cuando falta fecha de lanzamiento y deja al final las entradas sin fecha', () => {
+    const undated: CatalogIndexItem = { id: 'undated', title: 'A Undated' };
+    const dated: CatalogIndexItem = { id: 'year', title: 'Year only', year: 2025 };
+    expect(ids(selectCatalogGames([undated, dated, games[2]]))).toEqual(['new', 'year', 'undated']);
+    expect(ids(selectCatalogGames([undated, dated, games[2]], '', 'oldest'))).toEqual(['year', 'new', 'undated']);
   });
 
   it('oculta demos por defecto y combina el botón con búsqueda y orden', () => {

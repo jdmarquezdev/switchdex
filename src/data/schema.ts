@@ -36,7 +36,7 @@ export interface Game {
   titleId?: string;
   year?: number;
   releaseDate?: string;
-  /** Primera detección local o paso de demo a release; ausente en entradas heredadas. */
+  /** Detección local o paso a release; lanzamiento como aproximación en entradas heredadas. */
   addedAt?: string;
   isDemo?: boolean;
   genres: string[];

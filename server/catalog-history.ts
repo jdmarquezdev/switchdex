@@ -2,7 +2,7 @@ import type { Game } from '../src/data/schema';
 
 export interface CatalogHistory {
   version: 1;
-  /** null indica una entrada heredada cuya fecha de incorporación se desconoce. */
+  /** null indica una entrada heredada sin fecha de incorporación ni lanzamiento. */
   entries: Record<string, string | null>;
   /** Conserva el estado demo aunque una entrada desaparezca temporalmente. */
   demoIds: string[];
@@ -15,8 +15,10 @@ export function readHistory(value: unknown): CatalogHistory {
     return { version: 1, entries, demoIds: [] };
   }
   for (const [id, date] of Object.entries(value.entries)) {
-    if (date === null || (typeof date === 'string' && Number.isFinite(Date.parse(date)))) {
-      entries[id] = date === null ? null : new Date(date).toISOString();
+    if (date === null) {
+      entries[id] = null;
+    } else if (typeof date === 'string' && Number.isFinite(Date.parse(date))) {
+      entries[id] = /^\d{4}(?:-\d{2}(?:-\d{2})?)?$/.test(date) ? date : new Date(date).toISOString();
     }
   }
   const demoIds = 'demoIds' in value && Array.isArray(value.demoIds)
@@ -35,6 +37,7 @@ export function trackCatalogAdditions(games: Game[], previous: Game[], history: 
   const trackedGames = games.map((game) => {
     const becameRelease = demoIds.has(game.id) && game.isDemo === false;
     if (!Object.hasOwn(history.entries, game.id) || becameRelease) history.entries[game.id] = observedAt;
+    if (history.entries[game.id] === null) history.entries[game.id] = game.releaseDate ?? game.year?.toString() ?? null;
     if (game.isDemo) demoIds.add(game.id);
     else if (game.isDemo === false) demoIds.delete(game.id);
     return { ...game, addedAt: history.entries[game.id] ?? undefined };

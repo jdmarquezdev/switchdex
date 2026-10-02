@@ -18,8 +18,10 @@ export function selectCatalogGames(
       if (mode === 'title-asc') return titleOrder;
       if (mode === 'title-desc') return -titleOrder;
       const release = mode.startsWith('release-');
-      const aDate = release ? String(a.releaseDate ?? a.year ?? '') : a.addedAt ?? '';
-      const bDate = release ? String(b.releaseDate ?? b.year ?? '') : b.addedAt ?? '';
+      const aReleaseDate = String(a.releaseDate ?? a.year ?? '');
+      const bReleaseDate = String(b.releaseDate ?? b.year ?? '');
+      const aDate = release ? aReleaseDate : a.addedAt ?? aReleaseDate;
+      const bDate = release ? bReleaseDate : b.addedAt ?? bReleaseDate;
       // Las fechas desconocidas quedan al final en ambas direcciones.
       if (!aDate || !bDate) return Number(!aDate) - Number(!bDate) || titleOrder;
       const dateOrder = aDate.localeCompare(bDate);
