@@ -49,10 +49,15 @@ export async function handleCatalogRequest(request: IncomingMessage, response: S
   }
 }
 
-export async function catalogHealth(options: CatalogApiOptions = {}): Promise<{ ready: boolean; updatedAt?: string; games?: number }> {
+export async function catalogHealth(options: CatalogApiOptions = {}): Promise<{ ready: boolean; needsNormalization?: boolean; updatedAt?: string; games?: number }> {
   const cacheDir = resolve(options.cacheDir || process.env.CATALOG_CACHE_DIR || '.cache/catalog');
   try {
     const catalog = await readCatalogDocument(cacheDir);
-    return { ready: true, updatedAt: catalog.updatedAt, games: catalog.games.length };
+    return {
+      ready: true,
+      needsNormalization: catalog.games.some((game) => typeof game.isDemo !== 'boolean'),
+      updatedAt: catalog.updatedAt,
+      games: catalog.games.length
+    };
   } catch { return { ready: false }; }
 }

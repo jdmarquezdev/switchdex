@@ -3,7 +3,8 @@ import { mkdtemp, readFile, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { handleCatalogRequest } from '../server/catalog-api';
+import { catalogHealth, handleCatalogRequest, readCatalogDocument } from '../server/catalog-api';
+import { prepareCatalog } from '../server/catalog-bootstrap';
 import { syncCatalog } from '../server/catalog-sync';
 import { descriptionHash } from '../scripts/catalog-translations';
 import type { CatalogDocument } from '../src/data/schema';
@@ -206,5 +207,48 @@ describe('catalog API', () => {
     } finally {
       await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     }
+  });
+});
+
+describe('catalog startup', () => {
+  it('migra una caché sin isDemo aunque el SHA sea el mismo y la red no esté disponible', async () => {
+    const cacheDir = await temporaryDirectory();
+    const sourceUrl = 'https://example.com/catalog.json';
+    const sourceType = 'langegen-switch-games';
+    const games = [
+      { id: 'demo', title: 'Sample Homebrew [NSZ][DEMO]', year: 2027 },
+      { id: 'release', title: 'Complete Homebrew', year: 2026 }
+    ];
+    await syncCatalog({ cacheDir, sourceUrl, sourceType,
+      fetchImpl: async () => new Response(JSON.stringify(games), { status: 200 })
+    });
+    const path = join(cacheDir, 'normalized.json');
+    const legacy = JSON.parse(await readFile(path, 'utf8')) as CatalogDocument;
+    for (const game of legacy.games) delete game.isDemo;
+    await writeFile(path, JSON.stringify(legacy));
+    await writeFile(join(cacheDir, 'source-normalized.json'), JSON.stringify(legacy));
+    const state = JSON.stringify({ sha: 'a'.repeat(40), syncedAt: legacy.updatedAt });
+    await writeFile(join(cacheDir, 'source-state.json'), state);
+    expect(await catalogHealth({ cacheDir })).toMatchObject({ ready: true, needsNormalization: true });
+
+    const fetchImpl = vi.fn(async () => { throw new Error('offline'); });
+    const options = { cacheDir, sourceUrl, sourceType, fetchImpl };
+    const migrated = await prepareCatalog(options);
+    expect(migrated).toMatchObject({ source: 'cache', counts: { added: 0, removed: 0 } });
+    const catalog = await readCatalogDocument(cacheDir);
+    expect(catalog.games.find((game) => game.id === 'demo')).toMatchObject({ title: 'Sample Homebrew', isDemo: true });
+    expect(selectCatalogGames(catalog.games.map(toIndexItem)).map((game) => game.id)).toEqual(['release']);
+    expect(selectCatalogGames(catalog.games.map(toIndexItem), '', 'newest', true)).toHaveLength(2);
+    expect(await catalogHealth({ cacheDir })).toMatchObject({ ready: true, needsNormalization: false });
+    expect(await readFile(join(cacheDir, 'source-state.json'), 'utf8')).toBe(state);
+    expect(await prepareCatalog(options)).toBeUndefined();
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('sincroniza el fixture al arrancar sin catálogo', async () => {
+    const cacheDir = await temporaryDirectory();
+    expect(await prepareCatalog({ cacheDir, sourceUrl: '', sourceType: 'compatible-json' }))
+      .toMatchObject({ source: 'fixture' });
+    expect(await catalogHealth({ cacheDir })).toMatchObject({ ready: true, needsNormalization: false });
   });
 });

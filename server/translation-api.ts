@@ -6,7 +6,7 @@ import { createProvider, type Provider } from '../scripts/translation-providers'
 import { loadLocalEnv } from '../scripts/env';
 import type { Game } from '../src/data/schema';
 import { catalogHealth, handleCatalogRequest } from './catalog-api';
-import { syncCatalog } from './catalog-sync';
+import { prepareCatalog } from './catalog-bootstrap';
 import { startCatalogSyncScheduler } from './catalog-scheduler';
 import { isAllowedOrigin, parseAllowedOrigins } from './translation-origin';
 
@@ -191,13 +191,13 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse)
   }
 }
 
-if (!(await catalogHealth({ cacheDir })).ready) {
-  try {
-    const summary = await syncCatalog({ cacheDir });
+try {
+  const summary = await prepareCatalog({ cacheDir });
+  if (summary) {
     console.log(`[catalog] initial sync completed (${summary.counts.current} games)`);
-  } catch (error) {
-    console.error(`[catalog] initial sync failed: ${error instanceof Error ? error.message : 'unknown error'}`);
   }
+} catch (error) {
+  console.error(`[catalog] initial sync failed: ${error instanceof Error ? error.message : 'unknown error'}`);
 }
 startCatalogSyncScheduler({ cacheDir });
 if (!configuredModel) console.warn('[translate-api] TRANSLATION_MODEL is not configured');
