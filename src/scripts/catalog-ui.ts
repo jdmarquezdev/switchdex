@@ -1,10 +1,12 @@
 import type { CatalogIndexDocument, CatalogIndexItem } from '../data/schema';
+import { catalogSortMode, selectCatalogGames, type SortMode } from '../data/catalog-list';
 type Locale = 'es' | 'en';
 
 const grid = document.querySelector<HTMLElement>('[data-game-grid]');
 const template = document.querySelector<HTMLTemplateElement>('[data-game-card-template]');
 const search = document.querySelector<HTMLInputElement>('[data-search]');
 const sort = document.querySelector<HTMLSelectElement>('[data-sort]');
+const demos = document.querySelector<HTMLButtonElement>('[data-show-demos]');
 const count = document.querySelector<HTMLElement>('[data-results-count]');
 const live = document.querySelector<HTMLElement>('[data-results-live]');
 const empty = document.querySelector<HTMLElement>('[data-empty-state]');
@@ -26,6 +28,7 @@ const copy = {
 
 const locale = (): Locale => document.documentElement.lang === 'en' ? 'en' : 'es';
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase().trim();
+let showDemos = new URLSearchParams(location.search).get('demos') === '1';
 
 function updateCatalogTimestamp(value?: string): void {
   if (!catalogUpdated) return;
@@ -35,19 +38,6 @@ function updateCatalogTimestamp(value?: string): void {
   catalogUpdated.textContent = new Intl.DateTimeFormat(locale() === 'en' ? 'en-GB' : 'es-ES', {
     dateStyle: 'medium', timeStyle: 'short'
   }).format(date);
-}
-
-function matches(game: CatalogIndexItem, query: string): boolean {
-  return !query || normalize(game.title).includes(query);
-}
-
-function sortGames(items: CatalogIndexItem[], mode: string): CatalogIndexItem[] {
-  return [...items].sort((a, b) => {
-    if (mode === 'title-desc') return b.title.localeCompare(a.title, locale());
-    if (mode === 'newest') return String(b.releaseDate ?? b.year ?? '').localeCompare(String(a.releaseDate ?? a.year ?? ''));
-    if (mode === 'oldest') return String(a.releaseDate ?? a.year ?? '').localeCompare(String(b.releaseDate ?? b.year ?? ''));
-    return a.title.localeCompare(b.title, locale());
-  });
 }
 
 function createCard(game: CatalogIndexItem, index: number): HTMLElement | undefined {
@@ -81,10 +71,11 @@ function createCard(game: CatalogIndexItem, index: number): HTMLElement | undefi
   return card;
 }
 
-function syncUrl(query: string, sortMode: string): void {
+function syncUrl(query: string, sortMode: SortMode): void {
   const params = new URLSearchParams();
   if (query) params.set('q', search?.value.trim() || '');
   if (sortMode !== 'newest') params.set('sort', sortMode);
+  if (showDemos) params.set('demos', '1');
   history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}`);
 }
 
@@ -118,8 +109,9 @@ function render(resetLimit = false): void {
   if (!grid) return;
   if (resetLimit) visibleLimit = PAGE_SIZE;
   const query = normalize(search?.value || '');
-  const sortMode = sort?.value || 'newest';
-  matchedGames = sortGames(games.filter((game) => matches(game, query)), sortMode);
+  const sortMode = catalogSortMode(sort?.value ?? null);
+  matchedGames = selectCatalogGames(games, query, sortMode, showDemos, locale());
+  demos?.setAttribute('aria-pressed', String(showDemos));
   const fragment = document.createDocumentFragment();
   matchedGames.slice(0, visibleLimit).forEach((game, index) => {
     const card = createCard(game, index);
@@ -134,6 +126,7 @@ function render(resetLimit = false): void {
 function clearSearch(): void {
   if (search) search.value = '';
   if (sort) sort.value = 'newest';
+  showDemos = false;
   render(true);
 }
 
@@ -148,11 +141,13 @@ function enableInfiniteScroll(): void {
 
 const params = new URLSearchParams(location.search);
 if (search) search.value = params.get('q') || '';
-if (sort) sort.value = params.get('sort') || 'newest';
+if (sort) sort.value = catalogSortMode(params.get('sort'));
+demos?.setAttribute('aria-pressed', String(showDemos));
 updateCatalogTimestamp();
 
 search?.addEventListener('input', () => render(true));
 sort?.addEventListener('change', () => render(true));
+demos?.addEventListener('click', () => { showDemos = !showDemos; render(true); });
 loadMore?.addEventListener('click', appendNextPage);
 document.querySelectorAll('[data-clear-search]').forEach((button) => button.addEventListener('click', clearSearch));
 document.addEventListener('catalog:locale', () => { updateCatalogTimestamp(); render(); });

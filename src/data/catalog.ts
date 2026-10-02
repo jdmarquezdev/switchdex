@@ -26,6 +26,8 @@ export function toIndexItem(game: Game): CatalogIndexItem {
     title: game.title,
     year: game.year,
     releaseDate: game.releaseDate,
+    addedAt: game.addedAt,
+    isDemo: game.isDemo,
     cover: game.cover
   };
 }

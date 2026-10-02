@@ -13,7 +13,8 @@ Si aparece otra forma JSON, basta con añadir un adaptador nuevo en `src/data/ad
 ## Funcionalidades
 
 - **Catálogo en cuadrícula** con portadas, scroll infinito por bloques de 24 tarjetas y botón de respaldo accesible.
-- **Búsqueda instantánea por título** sobre un índice compacto, con ordenación por fecha o título (A–Z / Z–A). La búsqueda y el orden se reflejan en la URL para compartirlos.
+- **Búsqueda instantánea por título** sobre un índice compacto. Por defecto muestra los últimos incorporados; también permite ordenar por lanzamiento o título (A–Z / Z–A).
+- **Demos ocultas por defecto**, con botón «Mostrar demos» para incluirlas. Búsqueda, orden y demos se reflejan en la URL para compartirlos (`?demos=1`).
 - **Fichas de detalle dinámicas** en `/game/[id]`: portada grande, sinopsis, metadatos y galería de capturas con carga diferida, sin generar miles de páginas.
 - **Idiomas del juego con banderas**: cada ficha muestra los idiomas normalizados acompañados de su bandera, generada como SVG inline sin dependencias externas.
 - **Selector de español e inglés** en toda la interfaz; la preferencia se recuerda en el navegador y cada ficha muestra la descripción localizada disponible.
@@ -87,7 +88,11 @@ Para el formato publicado por `Langegen/switch-games`, usa `CATALOG_SOURCE_TYPE=
 
 La fecha de publicación procede del campo `year` de esa fuente. El normalizador interpreta años, meses rusos, fechas completas y rangos; cuando una recopilación contiene varias fechas utiliza la más reciente. La mayoría de entradas solo tiene precisión mensual, así que los títulos del mismo mes se desempatan alfabéticamente.
 
-Las fechas ISO (`YYYY-MM-DD` o `YYYY-MM`) conservan su precisión al importarse. El orden «Más recientes» usa la fecha de lanzamiento disponible, no la fecha de incorporación al catálogo, e incluye las fechas futuras que indique la fuente. Si el origen solo proporciona el mes, no se inventa el día. Tras actualizar el normalizador, ejecuta `npm run catalog:sync` para aplicar la corrección a los datos cacheados.
+Las fechas ISO (`YYYY-MM-DD` o `YYYY-MM`) conservan su precisión al importarse. Se usan exclusivamente al elegir ordenación por lanzamiento. Si el origen solo proporciona el mes, no se inventa el día.
+
+El orden predeterminado «Últimos añadidos» usa `addedAt`, la fecha UTC en la que una sincronización válida detecta cada ID por primera vez. Se conserva en `.cache/catalog/first-seen.json`, incluso si cambia la ficha, se reinician los procesos o el juego desaparece y vuelve a entrar. Como excepción, cuando una demo pierde su etiqueta y pasa a juego completo, `addedAt` se renueva con la fecha de esa sincronización para que aparezca entre las novedades. El historial conserva el estado demo aunque la entrada desaparezca temporalmente; las sincronizaciones posteriores no vuelven a renovar esa fecha. La fecha de lanzamiento publicada por la fuente se mantiene como metadato independiente. Las entradas de una caché anterior a este seguimiento quedan sin fecha conocida y al final; no es posible reconstruir su incorporación a partir del lanzamiento. Una instalación sin caché registra el catálogo inicial como un único lote. Los empates se ordenan por título e ID.
+
+Las demos se detectan mediante `isDemo` / `is_demo` / `demo`, tipo de contenido o marcadores en el título, incluido `[DEMO]` antes de limpiar las etiquetas del adaptador de referencia. El indicador normalizado `isDemo` llega al índice y se aplica tanto al HTML inicial como a la búsqueda y paginación del navegador. Tras desplegar esta actualización, ejecuta `npm run catalog:sync` en la API para migrar los datos existentes e iniciar el seguimiento.
 
 ## Formato de catálogo
 
@@ -215,6 +220,7 @@ El sync compara por ID y contenido normalizado, aplica el patrón `descarga → 
 - `.cache/catalog/normalized.json`: documento interno para Astro.
 - `.cache/catalog/source-normalized.json`: versión sin traducciones usada para comparar cambios.
 - `.cache/catalog/source.json`: última descarga válida como respaldo.
+- `.cache/catalog/first-seen.json`: historial persistente de incorporación por ID y estado demo; conservarlo en el volumen y en las copias de seguridad.
 
 No modifica ni elimina `.cache/catalog/translations.json`. Su salida estándar es una sola línea JSON con `counts`, `added`, `updated` y `removed`; por ejemplo, n8n puede usar `added` para construir la notificación.
 

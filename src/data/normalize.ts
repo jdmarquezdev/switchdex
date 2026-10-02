@@ -1,4 +1,5 @@
 import type { CompatibleCatalogEntry, ContentType, Game } from './schema';
+import { hasDemoMarker } from './demos';
 
 const LANGUAGE_LABELS: Record<string, string> = {
   es: 'Español', espanol: 'Español', español: 'Español', spanish: 'Español', испанский: 'Español',
@@ -303,6 +304,7 @@ export function normalizeEntry(entry: CompatibleCatalogEntry): Game | undefined 
     region: cleanString(entry.region),
     version: cleanString(entry.version),
     contentType,
+    isDemo: entry.isDemo === true || hasDemoMarker(`${entry.contentType ?? ''} ${title}`),
     sourceUrl: safeUrl(cleanString(entry.sourceUrl)),
     magnet: safeMagnet(entry.magnet),
     searchText

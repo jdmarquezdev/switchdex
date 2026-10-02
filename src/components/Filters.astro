@@ -1,13 +1,24 @@
+---
+import type { SortMode } from '../data/catalog-list';
+interface Props { sortMode?: SortMode; showDemos?: boolean; }
+const { sortMode = 'newest', showDemos = false } = Astro.props;
+---
 <div class="filters-panel sort-panel">
   <div class="filters-grid">
     <label class="sort-filter">
       <span data-i18n="sort.label">Ordenar</span>
       <select name="sort" data-sort>
-        <option value="newest" data-i18n="sort.newest">Más recientes</option>
-        <option value="title-asc" data-i18n="sort.titleAsc">Título A–Z</option>
-        <option value="title-desc" data-i18n="sort.titleDesc">Título Z–A</option>
-        <option value="oldest" data-i18n="sort.oldest">Más antiguos</option>
+        <option value="newest" selected={sortMode === 'newest'} data-i18n="sort.newest">Últimos añadidos</option>
+        <option value="title-asc" selected={sortMode === 'title-asc'} data-i18n="sort.titleAsc">Título A–Z</option>
+        <option value="title-desc" selected={sortMode === 'title-desc'} data-i18n="sort.titleDesc">Título Z–A</option>
+        <option value="oldest" selected={sortMode === 'oldest'} data-i18n="sort.oldest">Primeros añadidos</option>
+        <option value="release-newest" selected={sortMode === 'release-newest'} data-i18n="sort.releaseNewest">Lanzamiento más reciente</option>
+        <option value="release-oldest" selected={sortMode === 'release-oldest'} data-i18n="sort.releaseOldest">Lanzamiento más antiguo</option>
       </select>
     </label>
+    <button class="demo-toggle" type="button" data-show-demos aria-pressed={showDemos}>
+      <span class="demo-toggle-indicator" aria-hidden="true"></span>
+      <span data-i18n="filters.demos">Mostrar demos</span>
+    </button>
   </div>
 </div>

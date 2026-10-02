@@ -2,10 +2,13 @@ import { createServer } from 'node:http';
 import { mkdtemp, readFile, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { handleCatalogRequest } from '../server/catalog-api';
 import { syncCatalog } from '../server/catalog-sync';
 import { descriptionHash } from '../scripts/catalog-translations';
+import type { CatalogDocument } from '../src/data/schema';
+import { toIndexItem } from '../src/data/catalog';
+import { selectCatalogGames } from '../src/data/catalog-list';
 
 const temporaryDirectories: string[] = [];
 
@@ -24,6 +27,106 @@ afterEach(async () => {
 });
 
 describe('catalog sync', () => {
+  it('sube una demo a novedades al perder su etiqueta y persiste la fecha de release', async () => {
+    const cacheDir = await temporaryDirectory();
+    const fixturePath = join(cacheDir, 'fixture.json');
+    const options = { cacheDir, fixturePath, sourceUrl: '', sourceType: 'langegen-switch-games' };
+    const document = async () => JSON.parse(await readFile(join(cacheDir, 'normalized.json'), 'utf8')) as CatalogDocument;
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-09-01T12:00:00.000Z'));
+      await writeFixture(fixturePath, [{ id: 'orchard', title: 'Z Orchard [DEMO]', year: 2000 }]);
+      await syncCatalog(options);
+      expect((await document()).games[0].isDemo).toBe(true);
+
+      vi.setSystemTime(new Date('2026-09-10T12:00:00.000Z'));
+      await writeFixture(fixturePath, [
+        { id: 'orchard', title: 'Z Orchard [DEMO]', year: 2000 },
+        { id: 'meadow', title: 'A Meadow', year: 2026 }
+      ]);
+      await syncCatalog(options);
+      expect(selectCatalogGames((await document()).games.map(toIndexItem)).map((game) => game.id)).toEqual(['meadow']);
+
+      vi.setSystemTime(new Date('2026-10-01T12:00:00.000Z'));
+      await writeFixture(fixturePath, [
+        { id: 'orchard', title: 'Z Orchard', year: 2000 },
+        { id: 'meadow', title: 'A Meadow', year: 2026 }
+      ]);
+      const released = await syncCatalog(options);
+      expect(released.counts).toMatchObject({ added: 0, updated: 1 });
+      const index = selectCatalogGames((await document()).games.map(toIndexItem));
+      expect(index.map((game) => game.id)).toEqual(['orchard', 'meadow']);
+      expect(index[0]).toMatchObject({ isDemo: false, addedAt: released.updatedAt, releaseDate: '2000' });
+
+      vi.setSystemTime(new Date('2026-10-02T12:00:00.000Z'));
+      expect((await syncCatalog(options)).counts.updated).toBe(0);
+      expect((await document()).games.find((game) => game.id === 'orchard')?.addedAt).toBe(released.updatedAt);
+      expect(JSON.parse(await readFile(join(cacheDir, 'first-seen.json'), 'utf8')).entries.orchard).toBe(released.updatedAt);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('persiste la primera detección entre updates, eliminaciones y reapariciones', async () => {
+    const cacheDir = await temporaryDirectory();
+    const fixturePath = join(cacheDir, 'fixture.json');
+    const document = async () => JSON.parse(await readFile(join(cacheDir, 'normalized.json'), 'utf8')) as CatalogDocument;
+    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha', year: 2026 }]);
+    const first = await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
+    expect((await document()).games[0].addedAt).toBe(first.updatedAt);
+
+    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha revised' }, { id: 'beta', title: 'Beta', year: 2020 }]);
+    const second = await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
+    expect((await document()).games.map(({ id, addedAt }) => ({ id, addedAt }))).toEqual([
+      { id: 'alpha', addedAt: first.updatedAt }, { id: 'beta', addedAt: second.updatedAt }
+    ]);
+    expect((await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' })).counts.updated).toBe(0);
+
+    await writeFixture(fixturePath, [{ id: 'beta', title: 'Beta', year: 2020 }]);
+    await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
+    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha returns' }, { id: 'beta', title: 'Beta', year: 2020 }]);
+    await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
+    expect((await document()).games[0].addedAt).toBe(first.updatedAt);
+  });
+
+  it('migra cachés anteriores sin inventar fechas ni contabilizarlas como cambios del origen', async () => {
+    const cacheDir = await temporaryDirectory();
+    const fixturePath = join(cacheDir, 'fixture.json');
+    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha' }]);
+    await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
+    const path = join(cacheDir, 'normalized.json');
+    const legacy = JSON.parse(await readFile(path, 'utf8')) as CatalogDocument;
+    delete legacy.games[0].addedAt;
+    delete legacy.games[0].isDemo;
+    await writeFile(path, JSON.stringify(legacy));
+    await unlink(join(cacheDir, 'source-normalized.json'));
+    await unlink(join(cacheDir, 'first-seen.json'));
+    await writeFixture(fixturePath, [{ id: 'alpha', title: 'Alpha' }, { id: 'beta', title: 'Beta' }]);
+    const result = await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' });
+    const migrated = JSON.parse(await readFile(path, 'utf8')) as CatalogDocument;
+    expect(migrated.games[0].addedAt).toBeUndefined();
+    expect(migrated.games[1].addedAt).toBe(result.updatedAt);
+    expect(result.counts).toMatchObject({ added: 1, updated: 0 });
+    expect((await syncCatalog({ cacheDir, fixturePath, sourceUrl: '' })).counts.updated).toBe(0);
+  });
+
+  it('conserva caché e historial cuando una descarga no contiene juegos válidos', async () => {
+    const cacheDir = await temporaryDirectory();
+    const fetchImpl = async () => new Response(JSON.stringify([{ id: 'alpha', title: 'Alpha' }]), { status: 200 });
+    await syncCatalog({ cacheDir, sourceUrl: 'https://example.com/catalog.json', fetchImpl });
+    const paths = ['source.json', 'source-normalized.json', 'normalized.json', 'first-seen.json'];
+    const before = await Promise.all(paths.map((path) => readFile(join(cacheDir, path), 'utf8')));
+    await expect(syncCatalog({ cacheDir, sourceUrl: 'https://example.com/catalog.json',
+      fetchImpl: async () => new Response(JSON.stringify([{ id: 'bad' }]), { status: 200 })
+    })).rejects.toThrow('Ninguna entrada');
+    expect(await Promise.all(paths.map((path) => readFile(join(cacheDir, path), 'utf8')))).toEqual(before);
+    const fallback = await syncCatalog({ cacheDir, sourceUrl: 'https://example.com/catalog.json',
+      fetchImpl: async () => { throw new Error('offline'); }
+    });
+    expect(fallback.source).toBe('cache');
+    expect(fallback.counts).toMatchObject({ added: 0, updated: 0 });
+    expect(await readFile(join(cacheDir, 'first-seen.json'), 'utf8')).toBe(before[3]);
+  });
   it('detecta added, updated y removed sin modificar translations.json', async () => {
     const cacheDir = await temporaryDirectory();
     const fixturePath = join(cacheDir, 'fixture.json');
@@ -90,7 +193,7 @@ describe('catalog API', () => {
 
     try {
       const index = await fetch(`${base}/api/catalog`).then((response) => response.json()) as { games: Array<Record<string, unknown>> };
-      expect(index.games).toEqual([{ id: 'alpha', title: 'Alpha' }]);
+      expect(index.games).toEqual([{ id: 'alpha', title: 'Alpha', isDemo: false, addedAt: expect.any(String) }]);
       expect(index.games[0]).not.toHaveProperty('description');
 
       const detailResponse = await fetch(`${base}/api/game/alpha`);

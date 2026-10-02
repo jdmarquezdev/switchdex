@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { adaptCompatibleJson } from '../src/data/adapters/compatible-json';
 import { adaptLangegenSwitchGames } from '../src/data/adapters/langegen-switch-games';
 import { normalizeCatalog } from '../src/data/normalize';
+import { readHistory, trackCatalogAdditions } from './catalog-history';
 import type { CatalogDocument, Game } from '../src/data/schema';
 import { applyTranslationCache, emptyTranslationCache, type TranslationCache } from '../scripts/catalog-translations';
 
@@ -66,12 +67,13 @@ async function downloadCatalog(url: string, options: Required<Pick<CatalogSyncOp
 }
 
 function changedGames(previous: Game[], current: Game[]) {
+  const sourceContent = ({ addedAt: _addedAt, isDemo, ...game }: Game) => JSON.stringify({ ...game, isDemo: isDemo ?? false });
   const previousById = new Map(previous.map((game) => [game.id, game]));
   const currentById = new Map(current.map((game) => [game.id, game]));
   const added = current.filter((game) => !previousById.has(game.id));
   const updated = current.filter((game) => {
     const oldGame = previousById.get(game.id);
-    return oldGame !== undefined && JSON.stringify(oldGame) !== JSON.stringify(game);
+    return oldGame !== undefined && sourceContent(oldGame) !== sourceContent(game);
   });
   const removed = previous.filter((game) => !currentById.has(game.id));
   const pick = (games: Game[]): ChangedGame[] => games.map(({ id, title }) => ({ id, title }));
@@ -94,6 +96,7 @@ export async function syncCatalog(options: CatalogSyncOptions = {}): Promise<Cat
   const sourceCachePath = resolve(cacheDir, 'source.json');
   const sourceNormalizedPath = resolve(cacheDir, 'source-normalized.json');
   const normalizedPath = resolve(cacheDir, 'normalized.json');
+  const historyPath = resolve(cacheDir, 'first-seen.json');
   const translationsPath = resolve(cacheDir, 'translations.json');
   const fixturePath = resolve(options.fixturePath || 'tests/fixtures/catalog.json');
   const sourceUrl = options.sourceUrl ?? process.env.CATALOG_SOURCE_URL?.trim();
@@ -120,7 +123,6 @@ export async function syncCatalog(options: CatalogSyncOptions = {}): Promise<Cat
     try {
       const text = await downloadCatalog(sourceUrl, fetchOptions);
       raw = parseCatalog(text, sourceType, includeSourceUrls);
-      await writeAtomic(sourceCachePath, raw);
       source = 'remote';
       updatedAt = new Date().toISOString();
     } catch (error) {
@@ -145,9 +147,13 @@ export async function syncCatalog(options: CatalogSyncOptions = {}): Promise<Cat
   const sourceBaseline = await readJson<CatalogDocument | null>(sourceNormalizedPath, null);
   const legacyBaseline = sourceBaseline ? null : await readJson<CatalogDocument | null>(normalizedPath, null);
   const previousGames = sourceBaseline?.games || withoutCachedTranslations(legacyBaseline?.games || [], translations);
+  const history = readHistory(await readJson<unknown>(historyPath, null));
+  normalized.games = trackCatalogAdditions(normalized.games, previousGames, history, updatedAt);
   const changes = changedGames(previousGames, normalized.games);
   const sourceDocument: CatalogDocument = { updatedAt, source, games: normalized.games, skipped: normalized.skipped };
   const document: CatalogDocument = { ...sourceDocument, games: applyTranslationCache(normalized.games, translations) };
+  if (source === 'remote') await writeAtomic(sourceCachePath, raw);
+  await writeAtomic(historyPath, history);
   await writeAtomic(sourceNormalizedPath, sourceDocument);
   await writeAtomic(normalizedPath, document);
 

@@ -2,8 +2,8 @@
 import type { CatalogIndexItem } from '../data/schema';
 import GameCard from './GameCard.astro';
 
-interface Props { games: CatalogIndexItem[]; }
-const { games } = Astro.props;
+interface Props { games: CatalogIndexItem[]; total?: number; }
+const { games, total = games.length } = Astro.props;
 ---
 
 <div class="game-grid" data-game-grid>
@@ -23,14 +23,14 @@ const { games } = Astro.props;
   </article>
 </template>
 
-<div class="empty-state" data-empty-state hidden>
+<div class="empty-state" data-empty-state hidden={total > 0}>
   <span aria-hidden="true">∅</span>
   <h2 data-i18n="empty.title">Nada por aquí</h2>
   <p data-i18n="empty.body">Prueba con otro título o limpia la búsqueda.</p>
   <button type="button" data-clear-search data-i18n="empty.action">Ver toda la colección</button>
 </div>
 
-<div class="load-more-wrap" data-load-more-wrap aria-live="polite">
+<div class="load-more-wrap" data-load-more-wrap aria-live="polite" hidden={total <= games.length}>
   <button class="load-more" type="button" data-load-more>
     <span data-i18n="load.more">Cargar más</span>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"></path></svg>

@@ -1,4 +1,5 @@
 import type { CompatibleCatalogEntry, LocalizedDescriptions } from '../schema';
+import { hasDemoMarker } from '../demos';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -68,6 +69,9 @@ export function adaptCompatibleJson(input: unknown): CompatibleCatalogEntry[] {
     region: pickString(record, ['region', 'regions']),
     version: pickString(record, ['version', 'game_version']),
     contentType: pickString(record, ['contentType', 'content_type', 'type']),
+    isDemo: ['isDemo', 'is_demo', 'demo'].some((key) => record[key] === true || record[key] === 'true' || record[key] === 1)
+      || hasDemoMarker(pickString(record, ['title', 'name', 'game_title']) || '')
+      || hasDemoMarker(pickString(record, ['contentType', 'content_type', 'type']) || ''),
     sourceUrl: pickString(record, ['sourceUrl', 'source_url', 'url']),
     magnet: pickString(record, ['magnet', 'magnet_link', 'magnet_uri'])
   }));

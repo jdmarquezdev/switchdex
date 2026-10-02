@@ -6,6 +6,16 @@ import { normalizeCatalog } from '../src/data/normalize';
 import { toIndexItem } from '../src/data/catalog';
 
 describe('compatible-json adapter', () => {
+  it('reconoce demos por flag, tipo o marcador completo sin confundir otros títulos', () => {
+    const entries = adaptCompatibleJson([
+      { title: 'Sample', is_demo: true }, { title: 'Sample', content_type: 'demo' },
+      { title: 'Sample [DEMO]' }, { title: 'Sample DEMO Edition' },
+      { title: 'Demolition', is_demo: false }, { title: 'Democracy', demo: 'false' }
+    ]);
+    expect(normalizeCatalog(entries.map((entry, index) => ({ ...entry, id: `entry-${index}` }))).games
+      .filter((game) => game.isDemo)).toHaveLength(4);
+    expect(entries.map((entry) => entry.isDemo)).toEqual([true, true, true, true, false, false]);
+  });
   it('conserva la fecha completa desde la fuente hasta el índice de ordenación', () => {
     const entries = adaptCompatibleJson([
       { id: 'older', title: 'A Homebrew', year: 2026, release_date: '2026-09-17' },
@@ -32,6 +42,16 @@ describe('compatible-json adapter', () => {
 });
 
 describe('Langegen switch-games adapter', () => {
+  it('detecta demos antes de retirar etiquetas y notas del título', () => {
+    const entries = adaptLangegenSwitchGames([
+      { title: 'Example [NSZ][DEMO][ENG]' },
+      { title: 'Another (демонстрационная версия) [NSP][ENG]' },
+      { title: 'Demolition [NSP][ENG]' }
+    ]);
+    expect(entries.map((entry) => entry.title)).toEqual(['Example', 'Another', 'Demolition']);
+    expect(entries.map((entry) => entry.isDemo)).toEqual([true, true, false]);
+    expect(normalizeCatalog(entries).games.find((game) => game.title === 'Example')?.isDemo).toBe(true);
+  });
   it('limpia etiquetas de distribución y conserva el enlace magnet de la fuente', () => {
     const entries = adaptLangegenSwitchGames([{
       title: 'Drakkar Crew [NSZ][RUS/Multi10]',

@@ -24,6 +24,7 @@ export interface CompatibleCatalogEntry {
   region?: string;
   version?: string;
   contentType?: string;
+  isDemo?: boolean;
   sourceUrl?: string;
   magnet?: string;
 }
@@ -35,6 +36,9 @@ export interface Game {
   titleId?: string;
   year?: number;
   releaseDate?: string;
+  /** Primera detección local o paso de demo a release; ausente en entradas heredadas. */
+  addedAt?: string;
+  isDemo?: boolean;
   genres: string[];
   developer?: string;
   publisher?: string;
@@ -69,6 +73,8 @@ export interface CatalogIndexItem {
   title: string;
   year?: number;
   releaseDate?: string;
+  addedAt?: string;
+  isDemo?: boolean;
   cover?: string;
 }
 
